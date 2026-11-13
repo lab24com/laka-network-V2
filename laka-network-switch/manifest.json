@@ -1,0 +1,36 @@
+{
+	"manifest_version": 2.0,
+	"id": "laka_network_switch",
+	"type": "widget",
+	"name": "Network",
+	"namespace": "LakaNetworkSwitch",
+	"version": "0.26.3",
+	"author": "LAKA Soluciones Tecnologicas · Willian Tola",
+	"description": "Consola de equipos de red para dashboards de Zabbix 7.0 – 8.0: panel frontal, interfaces, topología CDP/LLDP, localizador MAC/IP, ópticas, PoE y salud del hardware. Detecta las plantillas oficiales de Cisco. © LAKA Soluciones Tecnologicas – GPLv3.",
+	"url": "",
+	"widget": {
+		"template_support": true,
+		"js_class": "CWidgetLakaNetworkSwitch"
+	},
+	"actions": {
+		"widget.laka_network_switch.view": {
+			"class": "WidgetView"
+		},
+		"widget.laka_network_switch.history": {
+			"class": "WidgetHistory",
+			"layout": "layout.json"
+		},
+		"widget.laka_network_switch.topology": {
+			"class": "WidgetTopology",
+			"layout": "layout.json"
+		}
+	},
+	"assets": {
+		"css": [
+			"widget.css"
+		],
+		"js": [
+			"class.widget.js"
+		]
+	}
+}

@@ -1,0 +1,854 @@
+/*
+ * LAKA Network – módulo de red para Zabbix 7.0 – 8.0
+ * © LAKA Soluciones Tecnológicas · Autor: Willian Tola · Licencia GPLv3
+ *
+ * Hoja de estilos única del widget. Los colores del tema se definen en .laka-theme-light / .laka-theme-dark (según <html theme="...">).
+ * El color solo marca excepciones; el estado normal se mantiene neutro (diseño NOC "silencioso").
+ */
+
+.laka-theme-light {
+	--l-bg: #ffffff;
+	--l-surface: #ffffff;
+	--l-panel: #f4f6f8;
+	--l-raised: #ebeff2;
+	--l-hover: #e6eef5;
+	--l-border: #d3dbe1;
+	--l-border-strong: #b5c1ca;
+	--l-text: #1f2c33;
+	--l-text-2: #4a5963;
+	--l-muted: #6f7f89;
+	--l-accent: #0275b8;
+	--l-accent-soft: rgba(2, 117, 184, .1);
+	--l-port-face: #eef2f5;
+	--l-port-face-up: #e3f3ea;
+	--l-port-border: #c3ced6;
+	--l-jack: #ffffff;
+	--l-map-bg: #f7f9fb;
+	--l-map-dot: #d6dee4;
+	--l-node: #ffffff;
+	--l-shadow: 0 10px 30px rgba(18, 38, 52, .18);
+	--l-ok: #2e9e5b;
+	--l-warn: #c98100;
+	--l-crit: #d64545;
+	--l-info: #2f7fd1;
+	--l-off: #8f9ba3;
+	color-scheme: light;
+}
+
+.laka-theme-dark {
+	--l-bg: #2b2b2b;
+	--l-surface: #262a2d;
+	--l-panel: #2f3437;
+	--l-raised: #363c40;
+	--l-hover: #3a4248;
+	--l-border: #41494f;
+	--l-border-strong: #56616a;
+	--l-text: #f0f3f5;
+	--l-text-2: #c5ced4;
+	--l-muted: #95a2ab;
+	--l-accent: #4aa3df;
+	--l-accent-soft: rgba(74, 163, 223, .16);
+	--l-port-face: #353b40;
+	--l-port-face-up: #2d4035;
+	--l-port-border: #4c565e;
+	--l-jack: #1f2326;
+	--l-map-bg: #24282b;
+	--l-map-dot: #343b40;
+	--l-node: #2f3539;
+	--l-shadow: 0 12px 36px rgba(0, 0, 0, .55);
+	--l-ok: #4cc27e;
+	--l-warn: #f0a63c;
+	--l-crit: #ef6060;
+	--l-info: #5aa2ef;
+	--l-off: #7c8890;
+	color-scheme: dark;
+}
+
+.laka-theme-hc {
+	--l-border: currentColor;
+	--l-port-border: currentColor;
+}
+
+/* Colores de severidad por defecto de Zabbix. */
+.laka-scope .laka-console, .laka-scope .laka-modal, .laka-scope.laka-modal {
+	--sev-0: #97aab3;
+	--sev-1: #7499ff;
+	--sev-2: #ffc859;
+	--sev-3: #ffa059;
+	--sev-4: #e97659;
+	--sev-5: #e45959;
+	--sev: var(--l-muted);
+	--l-radius: 6px;
+	--l-font: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+.laka-scope .sev-0 { --sev: var(--sev-0); } .laka-scope .sev-1 { --sev: var(--sev-1); } .laka-scope .sev-2 { --sev: var(--sev-2); }
+.laka-scope .sev-3 { --sev: var(--sev-3); } .laka-scope .sev-4 { --sev: var(--sev-4); } .laka-scope .sev-5 { --sev: var(--sev-5); }
+
+.laka-scope .laka-console *, .laka-scope .laka-modal *, .laka-scope.laka-modal * { box-sizing: border-box; }
+
+
+/* Anula los estilos globales de controles de formulario de Zabbix dentro del widget (limitado abajo a .laka-scope). */
+.laka-scope button {
+	box-sizing: border-box; height: auto; min-height: 0; min-width: 0; margin: 0; padding: 0;
+	border: 0; border-radius: 0; background: none; box-shadow: none; color: inherit;
+	font: inherit; line-height: inherit; letter-spacing: normal; text-align: inherit; text-transform: none;
+	text-shadow: none; vertical-align: baseline; white-space: normal; cursor: pointer; appearance: none;
+}
+.laka-scope button:hover, .laka-scope button:focus, .laka-scope button:active { box-shadow: none; }
+.laka-scope button::-moz-focus-inner { border: 0; }
+.laka-scope input, .laka-scope select { box-sizing: border-box; margin: 0; box-shadow: none; font: inherit; }
+
+/* ------------------------------------------------------------------ estructura de la consola */
+.laka-scope .laka-console {
+	display: grid;
+	grid-template-columns: 236px minmax(0, 1fr);
+	min-height: 100%;
+	background: var(--l-surface);
+	color: var(--l-text);
+	font-size: var(--l-font);
+	line-height: 1.4;
+	border: 1px solid var(--l-border);
+	border-radius: var(--l-radius);
+}
+.laka-scope .laka-console.empty { display: block; }
+.laka-scope .laka-console.nav-collapsed { grid-template-columns: 52px minmax(0, 1fr); }
+.laka-scope .laka-json { display: none !important; }
+.laka-scope .laka-muted { color: var(--l-muted); }
+.laka-scope .laka-strong { color: var(--l-text); font-weight: 600; }
+.laka-scope .laka-empty { padding: 28px; text-align: center; color: var(--l-muted); }
+.laka-scope .laka-empty-inline { padding: 18px; text-align: center; color: var(--l-muted); }
+.laka-scope .laka-banner { padding: 8px 14px; font-size: 12px; border-bottom: 1px solid var(--l-border); }
+.laka-scope .laka-banner.warn { background: color-mix(in srgb, var(--l-warn) 14%, transparent); color: var(--l-text); }
+
+/* ------------------------------------------------------------------ controles comunes */
+.laka-scope .laka-btn, .laka-scope .laka-segmented > button, .laka-scope .laka-chip, .laka-scope .laka-icon-btn {
+	display: inline-flex; align-items: center; gap: 6px;
+	height: 28px; margin: 0; padding: 0 10px;
+	border: 1px solid var(--l-border); border-radius: 4px;
+	background: var(--l-surface); color: var(--l-text-2);
+	font-size: 12px; line-height: 1; white-space: nowrap; cursor: pointer;
+}
+.laka-scope .laka-btn:hover, .laka-scope .laka-segmented > button:hover, .laka-scope .laka-chip:hover, .laka-scope .laka-icon-btn:hover { background: var(--l-hover); color: var(--l-text); }
+.laka-scope .laka-btn:disabled { opacity: .45; cursor: not-allowed; }
+.laka-scope .laka-btn.primary { border-color: var(--l-accent); background: var(--l-accent); color: #fff; }
+.laka-scope .laka-btn.primary:hover { filter: brightness(1.08); background: var(--l-accent); }
+.laka-scope .laka-btn.danger { color: var(--l-crit); }
+.laka-scope .laka-btn.active, .laka-scope .laka-chip.active { border-color: var(--l-accent); background: var(--l-accent-soft); color: var(--l-accent); }
+.laka-scope .laka-icon-btn { width: 28px; padding: 0; justify-content: center; }
+.laka-scope .laka-segmented { display: inline-flex; flex-wrap: wrap; }
+.laka-scope .laka-segmented > button { border-radius: 0; margin-left: -1px; }
+.laka-scope .laka-segmented > button:first-child { border-radius: 4px 0 0 4px; margin-left: 0; }
+.laka-scope .laka-segmented > button:last-child { border-radius: 0 4px 4px 0; }
+.laka-scope .laka-segmented > button.active { position: relative; z-index: 1; border-color: var(--l-accent); background: var(--l-accent-soft); color: var(--l-accent); font-weight: 600; }
+.laka-scope .laka-chip { height: 26px; border-radius: 13px; }
+.laka-scope .laka-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.laka-scope .laka-input {
+	height: 28px; padding: 0 10px; min-width: 0;
+	border: 1px solid var(--l-border); border-radius: 4px;
+	background: var(--l-surface); color: var(--l-text); font-size: 12px;
+}
+.laka-scope .laka-input:focus, .laka-scope .laka-console button:focus-visible, .laka-scope .laka-modal button:focus-visible, .laka-scope.laka-modal button:focus-visible {
+	outline: 2px solid var(--l-accent); outline-offset: 1px;
+}
+.laka-scope .laka-count {
+	display: inline-flex; align-items: center; justify-content: center;
+	min-width: 20px; height: 18px; padding: 0 6px; border-radius: 9px;
+	background: var(--l-raised); color: var(--l-text-2); font-size: 11px; font-weight: 600;
+}
+.laka-scope .laka-badge {
+	display: inline-flex; align-items: center; justify-content: center;
+	min-width: 20px; height: 18px; padding: 0 6px; margin-left: 6px; border-radius: 9px;
+	background: var(--sev); color: #1d1d1d; font-size: 11px; font-weight: 700;
+}
+.laka-scope .laka-tag {
+	display: inline-block; margin-left: 6px; padding: 0 5px; border-radius: 3px;
+	background: var(--l-raised); color: var(--l-text-2); font-size: 10px; font-weight: 700; line-height: 16px; vertical-align: 1px;
+}
+.laka-scope td.col-neighbor .laka-tag { margin-left: 0; }
+.laka-scope .laka-pill {
+	display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 10px;
+	font-size: 11px; font-weight: 600; background: var(--l-raised); color: var(--l-text-2);
+}
+.laka-scope .laka-pill.health-available { background: color-mix(in srgb, var(--l-ok) 16%, transparent); color: var(--l-ok); }
+.laka-scope .laka-pill.health-warning { background: color-mix(in srgb, var(--l-warn) 18%, transparent); color: var(--l-warn); }
+.laka-scope .laka-pill.health-unavailable { background: color-mix(in srgb, var(--l-crit) 16%, transparent); color: var(--l-crit); }
+.laka-scope .laka-pill.health-maintenance { background: color-mix(in srgb, var(--l-info) 16%, transparent); color: var(--l-info); }
+.laka-scope .laka-dot { display: inline-block; flex: 0 0 auto; width: 9px; height: 9px; margin-right: 7px; border-radius: 50%; background: var(--l-off); vertical-align: 0; }
+.laka-scope .laka-dot.st-up, .laka-scope .laka-dot.hw-ok { background: var(--l-ok); }
+.laka-scope .laka-dot.st-down { background: transparent; border: 2px solid var(--l-off); }
+.laka-scope .laka-dot.st-disabled { background: var(--l-off); opacity: .55; }
+.laka-scope .laka-dot.st-unknown, .laka-scope .laka-dot.hw-unknown { background: transparent; border: 2px dashed var(--l-off); }
+.laka-scope .laka-dot.hw-warning { background: var(--l-warn); }
+.laka-scope .laka-dot.hw-critical { background: var(--l-crit); }
+.laka-scope .laka-dot[class*="sev-"] { background: var(--sev); border: 0; }
+.laka-scope .laka-meter { display: inline-block; width: 46px; height: 6px; margin-right: 8px; border-radius: 3px; background: var(--l-raised); overflow: hidden; vertical-align: 1px; }
+.laka-scope .laka-meter > span { display: block; height: 100%; width: var(--value, 0%); border-radius: 3px; background: var(--l-accent); }
+.laka-scope .laka-meter.ok > span { background: var(--l-ok); }
+.laka-scope .laka-meter.warn > span { background: var(--l-warn); }
+.laka-scope .laka-meter.high > span { background: var(--l-crit); }
+.laka-scope .laka-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 12px; }
+.laka-scope .laka-toolbar-group { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.laka-scope .laka-toolbar-title { display: flex; flex-direction: column; gap: 2px; }
+.laka-scope .laka-stat { display: inline-flex; align-items: center; color: var(--l-text-2); }
+.laka-scope .laka-stat b { margin-left: 4px; color: var(--l-text); }
+.laka-scope .laka-card { margin-bottom: 14px; border: 1px solid var(--l-border); border-radius: var(--l-radius); background: var(--l-surface); }
+.laka-scope .laka-card-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--l-border); }
+.laka-scope .laka-card-title { font-size: 13px; font-weight: 700; color: var(--l-text); }
+
+/* ------------------------------------------------------------------ navegación */
+.laka-scope .laka-nav { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--l-border); background: var(--l-panel); border-radius: var(--l-radius) 0 0 var(--l-radius); }
+.laka-scope .laka-nav-head { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-bottom: 1px solid var(--l-border); }
+.laka-scope .laka-nav-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.laka-scope .laka-nav-title { font-size: 13px; font-weight: 700; }
+.laka-scope .laka-nav-title b { color: var(--l-muted); font-weight: 600; }
+.laka-scope .laka-nav-topology {
+	display: flex; align-items: center; gap: 8px; width: 100%; height: 34px; margin: 0; padding: 0 10px;
+	border: 1px solid var(--l-border); border-radius: 4px; background: var(--l-surface); color: var(--l-text);
+	font-size: 12px; font-weight: 600; text-align: left; cursor: pointer;
+}
+.laka-scope .laka-nav-topology:hover { background: var(--l-hover); }
+.laka-scope .laka-nav-topology.active { border-color: var(--l-accent); background: var(--l-accent-soft); color: var(--l-accent); }
+.laka-scope .laka-nav-topology-icon { font-size: 15px; color: var(--l-accent); }
+.laka-scope .laka-nav-topology .laka-count { margin-left: auto; }
+.laka-scope .laka-nav-search { width: 100%; }
+.laka-scope .laka-nav-filters { flex-wrap: nowrap; }
+.laka-scope .laka-nav-filters > button { flex: 1 1 auto; justify-content: center; min-width: 0; padding: 0 4px; height: 26px; font-size: 11px; }
+.laka-scope .laka-nav-list { flex: 1; min-height: 0; max-height: max(420px, 72vh); overflow-y: auto; scrollbar-width: thin; }
+.laka-scope .laka-nav { position: sticky; top: 0; align-self: start; max-height: 100vh; }
+.laka-scope .laka-device {
+	display: flex; align-items: flex-start; gap: 9px; width: 100%; margin: 0; padding: 10px 12px;
+	border: 0; border-bottom: 1px solid var(--l-border); border-left: 3px solid transparent; border-radius: 0;
+	background: transparent; color: var(--l-text); text-align: left; cursor: pointer;
+}
+.laka-scope .laka-device:hover { background: var(--l-hover); }
+.laka-scope .laka-device.active { background: var(--l-surface); border-left-color: var(--l-accent); }
+.laka-scope .laka-device.hidden { display: none; }
+.laka-scope .laka-device-dot { flex: 0 0 auto; width: 10px; height: 10px; margin-top: 4px; border-radius: 50%; background: var(--l-ok); }
+.laka-scope .laka-device-dot.health-warning { background: var(--sev); }
+.laka-scope .laka-device-dot.health-unavailable { background: var(--l-crit); }
+.laka-scope .laka-device-dot.health-maintenance { background: var(--l-info); }
+.laka-scope .laka-device-dot.health-unknown { background: transparent; border: 2px dashed var(--l-off); }
+.laka-scope .laka-device-main { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
+.laka-scope .laka-device-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 700; }
+.laka-scope .laka-device-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--l-muted); font-size: 11px; }
+.laka-scope .laka-device-stats { display: flex; flex-wrap: wrap; gap: 2px 10px; color: var(--l-text-2); font-size: 11px; }
+.laka-scope .laka-device-stats .warn { color: var(--l-warn); font-weight: 600; }
+.laka-scope .laka-device-stats .high { color: var(--l-crit); font-weight: 600; }
+.laka-scope .laka-device .laka-badge { margin-top: 1px; }
+.laka-scope .laka-console.nav-collapsed .laka-nav-head { padding: 10px 8px; align-items: center; }
+.laka-scope .laka-console.nav-collapsed .laka-nav-title, .laka-scope .laka-console.nav-collapsed .laka-nav-search, .laka-scope .laka-console.nav-collapsed .laka-nav-filters, .laka-scope .laka-console.nav-collapsed .laka-device-main, .laka-scope .laka-console.nav-collapsed .laka-nav-topology-label, .laka-scope .laka-console.nav-collapsed .laka-nav-topology .laka-count { display: none; }
+.laka-scope .laka-console.nav-collapsed .laka-nav-topology { justify-content: center; padding: 0; }
+.laka-scope .laka-console.nav-collapsed .laka-device { justify-content: center; padding: 12px 6px; position: relative; }
+.laka-scope .laka-console.nav-collapsed .laka-device .laka-badge { position: absolute; top: 2px; right: 2px; transform: scale(.85); }
+.laka-scope .laka-console.nav-collapsed .laka-nav-toggle { transform: rotate(180deg); }
+
+/* ------------------------------------------------------------------ área principal y paneles */
+.laka-scope .laka-main { min-width: 0; background: var(--l-surface); border-radius: 0 var(--l-radius) var(--l-radius) 0; }
+.laka-scope .laka-pane, .laka-scope .laka-global-topology { display: none; }
+.laka-scope .laka-pane.active, .laka-scope .laka-global-topology.active { display: block; }
+.laka-scope .laka-global-topology { padding: 14px; }
+.laka-scope .laka-sw { padding: 14px 16px 16px; }
+.laka-scope .laka-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.laka-scope .laka-head-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.laka-scope .laka-head-name { font-size: 16px; font-weight: 700; color: var(--l-text); }
+.laka-scope .laka-head-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; font-size: 12px; }
+.laka-scope .laka-meta-item.stale .laka-strong { color: var(--l-warn); }
+.laka-scope .laka-meta-item.bad .laka-strong { color: var(--l-crit); }
+.laka-scope .laka-meta-item[title] { cursor: help; }
+.laka-scope .laka-tabs { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 14px; border-bottom: 1px solid var(--l-border); }
+.laka-scope .laka-tab {
+	position: relative; display: inline-flex; align-items: center; gap: 7px; height: 34px; margin: 0 0 -1px; padding: 0 12px;
+	border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent;
+	color: var(--l-muted); font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.laka-scope .laka-tab:hover { color: var(--l-text); }
+.laka-scope .laka-tab.active { border-bottom-color: var(--l-accent); color: var(--l-accent); }
+.laka-scope .laka-tab-panel { display: none; }
+.laka-scope .laka-sw[data-active-tab="summary"] .laka-tab-panel[data-tab="summary"], .laka-scope .laka-sw[data-active-tab="interfaces"] .laka-tab-panel[data-tab="interfaces"], .laka-scope .laka-sw[data-active-tab="topology"] .laka-tab-panel[data-tab="topology"], .laka-scope .laka-sw[data-active-tab="consumption"] .laka-tab-panel[data-tab="consumption"], .laka-scope .laka-sw[data-active-tab="hardware"] .laka-tab-panel[data-tab="hardware"] { display: block; }
+
+/* ------------------------------------------------------------------ franja de KPI */
+.laka-scope .laka-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.laka-scope .laka-kpi {
+	display: flex; flex-direction: column; gap: 3px; min-width: 0; margin: 0; padding: 10px 12px;
+	border: 1px solid var(--l-border); border-left: 3px solid var(--l-border); border-radius: var(--l-radius);
+	background: var(--l-surface); color: var(--l-text); text-align: left;
+}
+.laka-scope button.laka-kpi { cursor: pointer; }
+.laka-scope button.laka-kpi:hover { background: var(--l-hover); }
+.laka-scope .laka-kpi.ok { border-left-color: var(--l-ok); }
+.laka-scope .laka-kpi.warn { border-left-color: var(--l-warn); }
+.laka-scope .laka-kpi.critical, .laka-scope .laka-kpi.high { border-left-color: var(--l-crit); }
+.laka-scope .laka-kpi[class*="sev-"] { border-left-color: var(--sev); }
+.laka-scope .laka-kpi-label { color: var(--l-muted); font-size: 11px; font-weight: 600; }
+.laka-scope .laka-kpi-value { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; color: var(--l-text-2); font-size: 13px; }
+.laka-scope .laka-kpi-value .laka-meter { width: 100%; margin: 4px 0 0; }
+.laka-scope .laka-big { color: var(--l-text); font-size: 22px; font-weight: 700; line-height: 1.1; }
+.laka-scope .laka-kpi.warn .laka-big { color: var(--l-warn); }
+.laka-scope .laka-kpi.critical .laka-big, .laka-scope .laka-kpi.high .laka-big { color: var(--l-crit); }
+.laka-scope .laka-kpi-sub { overflow: hidden; color: var(--l-muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ------------------------------------------------------------------ frente del equipo */
+.laka-scope .laka-port-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--l-text-2); font-size: 11px; }
+.laka-scope .laka-legend-port::before {
+	content: ""; display: inline-block; width: 12px; height: 10px; margin-right: 5px; vertical-align: -1px;
+	border: 1px solid var(--l-port-border); border-radius: 2px; background: var(--l-port-face);
+}
+.laka-scope .laka-legend-port.up::before { background: var(--l-port-face-up); box-shadow: inset 0 3px 0 var(--l-ok); }
+.laka-scope .laka-legend-port.slow::before { background: var(--l-port-face-up); box-shadow: inset 0 3px 0 var(--l-warn); }
+.laka-scope .laka-legend-port.disabled::before { background: repeating-linear-gradient(135deg, var(--l-port-face) 0 2px, var(--l-off) 2px 3px); }
+.laka-scope .laka-legend-port.unknown::before { border-style: dashed; }
+.laka-scope .laka-legend-port.problem::before { border: 2px solid var(--sev-4); }
+.laka-scope .laka-faceplate { display: flex; flex-direction: column; gap: 12px; padding: 14px; overflow-x: auto; }
+.laka-scope .laka-chassis { display: flex; align-items: stretch; gap: 10px; min-width: max-content; }
+.laka-scope .laka-chassis-label {
+	display: flex; align-items: center; justify-content: center; width: 26px; flex: 0 0 auto;
+	border-radius: 4px; background: var(--l-raised); color: var(--l-text-2);
+	font-size: 11px; font-weight: 700; writing-mode: vertical-rl; transform: rotate(180deg);
+}
+.laka-scope .laka-chassis-body {
+	display: flex; align-items: center; gap: 14px; padding: 10px 12px;
+	border: 1px solid var(--l-border-strong); border-radius: 5px; background: var(--l-panel);
+}
+.laka-scope .laka-port-block { display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column; gap: 5px 4px; }
+.laka-scope .laka-port-block.modules { padding-left: 14px; border-left: 1px dashed var(--l-border-strong); }
+.laka-scope .laka-port-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(max(78px, calc(100% / var(--cols, 24) - 6px)), 1fr)); gap: 6px; }
+.laka-scope .laka-port-block.others { display: flex; flex-wrap: wrap; grid-template-rows: none; max-width: 420px; }
+.laka-scope .laka-port-block.others .laka-port { width: auto; min-width: 64px; padding: 0 8px 3px; }
+.laka-scope .layout-grid .laka-chassis, .laka-scope .layout-grid .laka-chassis-body { min-width: 0; width: 100%; }
+.laka-scope .layout-grid .laka-chassis-body { display: block; }
+
+.laka-scope .laka-port {
+	position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+	width: 34px; height: 30px; margin: 0; padding: 0 0 3px;
+	border: 1px solid var(--l-port-border); border-radius: 3px 3px 5px 5px;
+	background: var(--l-port-face); color: var(--l-text-2); cursor: pointer;
+	transition: border-color .12s ease, box-shadow .12s ease;
+}
+.laka-scope .layout-grid .laka-port { width: auto; height: auto; min-height: 40px; padding: 8px 6px 6px; justify-content: center; }
+.laka-scope .laka-port.kind-sfp { width: 40px; border-radius: 2px; }
+.laka-scope .laka-port:hover, .laka-scope .laka-port.linked { border-color: var(--l-accent); box-shadow: 0 0 0 2px var(--l-accent-soft); z-index: 2; }
+.laka-scope .laka-port-led { position: absolute; top: 3px; left: 50%; width: 14px; height: 3px; margin-left: -7px; border-radius: 2px; background: transparent; }
+.laka-scope .laka-port-num { font-size: 11px; font-weight: 600; line-height: 1; }
+.laka-scope .layout-grid .laka-port-num { font-size: 11px; }
+.laka-scope .laka-port-alias { max-width: 100%; margin-top: 3px; overflow: hidden; color: var(--l-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.laka-scope .laka-port-util { position: absolute; left: 3px; right: 3px; bottom: 1px; height: 2px; border-radius: 1px; background: linear-gradient(90deg, var(--l-accent) var(--util), transparent var(--util)); }
+.laka-scope .laka-port-util.warn { background: linear-gradient(90deg, var(--l-warn) var(--util), transparent var(--util)); }
+.laka-scope .laka-port-util.high { background: linear-gradient(90deg, var(--l-crit) var(--util), transparent var(--util)); }
+
+.laka-scope .laka-port.st-up { background: var(--l-port-face-up); color: var(--l-text); }
+.laka-scope .laka-port.st-up .laka-port-led { background: var(--l-ok); box-shadow: 0 0 4px var(--l-ok); }
+.laka-scope .laka-port.st-up.slow .laka-port-led { background: var(--l-warn); box-shadow: 0 0 4px var(--l-warn); }
+.laka-scope .laka-port.st-down { background: var(--l-jack); color: var(--l-muted); }
+.laka-scope .laka-port.st-disabled { background: repeating-linear-gradient(135deg, var(--l-port-face) 0 4px, transparent 4px 7px); color: var(--l-muted); opacity: .75; }
+.laka-scope .laka-port.st-unknown { border-style: dashed; color: var(--l-muted); }
+.laka-scope .laka-port.uplink.watched.st-down { border-color: var(--l-crit); color: var(--l-crit); }
+.laka-scope .laka-port.has-problem { border: 2px solid var(--sev); }
+.laka-scope .laka-port.has-problem::after {
+	content: ""; position: absolute; top: -4px; right: -4px; width: 9px; height: 9px;
+	border: 2px solid var(--l-panel); border-radius: 50%; background: var(--sev);
+}
+.laka-scope .laka-port.poe::before { content: "⚡"; position: absolute; top: 1px; right: 1px; font-size: 8px; line-height: 1; color: var(--l-warn); }
+.laka-scope .laka-port.hidden-by-filter { opacity: .18; }
+
+/* ------------------------------------------------------------------ lista de atención */
+.laka-scope .laka-attention { display: flex; flex-direction: column; }
+.laka-scope .laka-attention-row {
+	display: grid; grid-template-columns: 16px minmax(90px, .7fr) minmax(120px, 1.2fr) minmax(160px, 2fr); align-items: center; gap: 10px;
+	width: 100%; margin: 0; padding: 9px 14px; border: 0; border-bottom: 1px solid var(--l-border); border-radius: 0;
+	background: transparent; color: var(--l-text); font-size: 12px; text-align: left; cursor: pointer;
+}
+.laka-scope .laka-attention-row:last-child { border-bottom: 0; }
+.laka-scope .laka-attention-row:hover { background: var(--l-hover); }
+.laka-scope .laka-attention-port { font-weight: 700; }
+.laka-scope .laka-attention-alias, .laka-scope .laka-attention-reason { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--l-text-2); }
+
+/* ------------------------------------------------------------------ tabla de interfaces */
+.laka-scope .laka-table-scroll {
+	max-height: calc(36px + var(--rows, 24) * 33px); overflow: auto;
+	border: 1px solid var(--l-border); border-radius: var(--l-radius); scrollbar-width: thin;
+}
+.laka-scope .laka-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.laka-scope .laka-table th { position: sticky; top: 0; z-index: 2; padding: 0; background: var(--l-panel); border-bottom: 1px solid var(--l-border-strong); text-align: left; white-space: nowrap; }
+.laka-scope .laka-sort {
+	display: block; width: 100%; height: 34px; margin: 0; padding: 0 10px; border: 0; border-radius: 0;
+	background: transparent; color: var(--l-text-2); font-size: 11px; font-weight: 700; text-align: left; cursor: pointer;
+}
+.laka-scope .laka-sort:hover { background: var(--l-hover); color: var(--l-text); }
+.laka-scope .laka-sort.active { color: var(--l-accent); }
+.laka-scope .laka-sort.active[data-direction="asc"]::after { content: " ▲"; font-size: 9px; }
+.laka-scope .laka-sort.active[data-direction="desc"]::after { content: " ▼"; font-size: 9px; }
+.laka-scope .laka-table td { height: 33px; padding: 0 10px; border-bottom: 1px solid var(--l-border); color: var(--l-text-2); white-space: nowrap; }
+.laka-scope .laka-row { cursor: pointer; }
+.laka-scope .laka-row:hover td, .laka-scope .laka-row.linked td { background: var(--l-hover); }
+.laka-scope .laka-row.hidden { display: none; }
+.laka-scope .laka-table td.col-name { color: var(--l-text); font-weight: 700; }
+.laka-scope .laka-table td.col-alias { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.laka-scope .laka-table td.col-neighbor { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+.laka-scope .laka-table td.col-status { color: var(--l-text); }
+.laka-scope .laka-table td.col-in, .laka-scope .laka-table td.col-out, .laka-scope .laka-table td.col-speed, .laka-scope .laka-table td.col-errors, .laka-scope .laka-table td.col-discards, .laka-scope .laka-table td.col-poe, .laka-scope .laka-table th.col-in, .laka-scope .laka-table th.col-out, .laka-scope .laka-table th.col-errors, .laka-scope .laka-table th.col-discards { text-align: right; }
+.laka-scope .laka-table th.col-in .laka-sort, .laka-scope .laka-table th.col-out .laka-sort, .laka-scope .laka-table th.col-errors .laka-sort, .laka-scope .laka-table th.col-discards .laka-sort { text-align: right; }
+.laka-scope .laka-table td.warn { color: var(--l-warn); font-weight: 700; }
+.laka-scope .laka-table td.bad { color: var(--l-crit); font-weight: 700; }
+.laka-scope .laka-row.st-down td.col-status, .laka-scope .laka-row.st-disabled td.col-status, .laka-scope .laka-row.st-unknown td.col-status { color: var(--l-muted); }
+.laka-scope .laka-no-match { display: none; }
+.laka-scope .laka-tab-panel.filter-empty .laka-no-match { display: block; }
+
+/* ------------------------------------------------------------------ topología */
+.laka-scope .laka-topology { border: 1px solid var(--l-border); border-radius: var(--l-radius); background: var(--l-surface); overflow: hidden; }
+.laka-scope .laka-topology-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; padding: 10px 12px; border-bottom: 1px solid var(--l-border); }
+.laka-scope .laka-topology-title { font-size: 13px; font-weight: 700; color: var(--l-text); }
+.laka-scope .laka-topology-subtitle { margin-top: 2px; color: var(--l-muted); font-size: 11px; }
+.laka-scope .laka-topology-search { width: 170px; }
+.laka-scope .laka-endpoint-selector { display: none; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--l-border); background: var(--l-panel); }
+.laka-scope .laka-topology.endpoints-open .laka-endpoint-selector { display: flex; }
+.laka-scope .laka-topology-stage {
+	position: relative; height: var(--stage-height, 560px); min-height: 260px; max-height: 85vh; overflow: hidden; resize: vertical;
+	background-color: var(--l-map-bg); background-image: radial-gradient(var(--l-map-dot) 1px, transparent 1px); background-size: 20px 20px;
+	cursor: grab; touch-action: none; outline: 0;
+}
+.laka-scope .laka-tab-panel[data-tab="topology"] .laka-topology-stage { --stage-height: 520px; }
+.laka-scope .laka-topology-stage.panning { cursor: grabbing; }
+.laka-scope .laka-topology-svg { display: block; width: 100%; height: 100%; user-select: none; font-family: inherit; }
+.laka-scope .laka-topology-empty { display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px; color: var(--l-muted); text-align: center; }
+.laka-scope .laka-topology-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 8px 12px; border-top: 1px solid var(--l-border); color: var(--l-text-2); font-size: 11px; }
+.laka-scope .laka-legend-line::before { content: ""; display: inline-block; width: 20px; height: 0; margin-right: 6px; vertical-align: 3px; border-top: 3px solid var(--l-ok); }
+.laka-scope .laka-legend-line.warn::before { border-top-color: var(--l-warn); }
+.laka-scope .laka-legend-line.high::before { border-top-color: var(--l-crit); border-top-width: 4px; }
+.laka-scope .laka-legend-line.down::before { border-top: 3px dashed var(--l-crit); }
+.laka-scope .laka-legend-line.unknown::before { border-top: 2px dashed var(--l-off); }
+.laka-scope .laka-legend-line.endpoint::before { border-top: 1px solid var(--l-off); }
+.laka-scope .laka-legend-hint { margin-left: auto; }
+
+.laka-scope .lt-edge { fill: none; stroke: var(--l-ok); stroke-linecap: round; }
+.laka-scope .lt-edge.warn { stroke: var(--l-warn); }
+.laka-scope .lt-edge.high { stroke: var(--l-crit); }
+.laka-scope .lt-edge.down { stroke: var(--l-crit); stroke-dasharray: 7 5; }
+.laka-scope .lt-edge.unknown { stroke: var(--l-off); stroke-dasharray: 4 4; }
+.laka-scope .lt-edge.endpoint { stroke-width: 1.2px; opacity: .75; }
+.laka-scope .lt-edge.endpoint.down { opacity: .45; }
+.laka-scope .lt-edge.selected { stroke: var(--l-accent) !important; stroke-dasharray: none; }
+.laka-scope .lt-hit { fill: none; stroke: transparent; stroke-width: 14px; cursor: pointer; }
+.laka-scope .lt-port-label, .laka-scope .lt-badge-text { fill: var(--l-text); font-size: 10px; font-weight: 600; pointer-events: none; }
+.laka-scope .lt-port-bg { fill: var(--l-surface); stroke: var(--l-border); stroke-width: 1px; pointer-events: none; }
+.laka-scope .lt-badge { fill: var(--l-raised); stroke: var(--l-border-strong); }
+.laka-scope .lt-node { cursor: pointer; }
+.laka-scope .lt-node-box { fill: var(--l-node); stroke: var(--l-border-strong); stroke-width: 1.5px; }
+.laka-scope .lt-node.health-available .lt-node-box { stroke: var(--l-ok); }
+.laka-scope .lt-node.health-warning .lt-node-box { stroke: var(--sev); stroke-width: 2.5px; }
+.laka-scope .lt-node.health-unavailable .lt-node-box { stroke: var(--l-crit); stroke-width: 2.5px; }
+.laka-scope .lt-node.health-maintenance .lt-node-box { stroke: var(--l-info); }
+.laka-scope .lt-node.current .lt-node-box { stroke-width: 3px; filter: drop-shadow(0 0 5px var(--l-accent-soft)); }
+.laka-scope .lt-node.match .lt-node-box { stroke: var(--l-accent); stroke-width: 3px; }
+.laka-scope .lt-node-strip { fill: var(--l-ok); }
+.laka-scope .lt-node.health-warning .lt-node-strip { fill: var(--sev); }
+.laka-scope .lt-node.health-unavailable .lt-node-strip { fill: var(--l-crit); }
+.laka-scope .lt-node.health-maintenance .lt-node-strip { fill: var(--l-info); }
+.laka-scope .lt-node.health-unknown .lt-node-strip { fill: var(--l-off); }
+.laka-scope .lt-name { fill: var(--l-text); font-size: 12px; font-weight: 700; }
+.laka-scope .lt-sub { fill: var(--l-muted); font-size: 10px; }
+.laka-scope .lt-icon { fill: none; stroke: var(--l-text-2); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.laka-scope .lt-endpoint .lt-node-box { fill: var(--l-surface); stroke-dasharray: 4 3; stroke: var(--l-border-strong); }
+.laka-scope .lt-endpoint.st-up .lt-node-box { stroke: var(--l-ok); }
+.laka-scope .lt-endpoint.st-down .lt-node-box, .laka-scope .lt-endpoint.st-disabled .lt-node-box { stroke: var(--l-off); }
+.laka-scope .lt-cluster .lt-node-box { fill: var(--l-panel); stroke: var(--l-border-strong); stroke-dasharray: none; }
+.laka-scope .lt-cluster-count { fill: var(--l-accent); font-size: 12px; font-weight: 700; }
+.laka-scope .laka-topology-svg.focusing .lt-node:not(.hl), .laka-scope .laka-topology-svg.focusing .lt-edge:not(.hl), .laka-scope .laka-topology-svg.focusing .lt-port:not(.hl), .laka-scope .laka-topology-svg.focusing .lt-badge-g:not(.hl) { opacity: .16; }
+.laka-scope .lt-dragging { cursor: grabbing; }
+
+/* ------------------------------------------------------------------ gráficas destacadas y hardware */
+.laka-scope .laka-featured-picker { display: none; margin-bottom: 12px; padding: 12px; border: 1px solid var(--l-border); border-radius: var(--l-radius); background: var(--l-panel); }
+.laka-scope .laka-featured.config-open .laka-featured-picker { display: block; }
+.laka-scope .laka-featured-picker-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.laka-scope .laka-chip.selected { border-color: var(--l-ok); background: color-mix(in srgb, var(--l-ok) 14%, transparent); color: var(--l-text); }
+.laka-scope .laka-featured-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(520px, 100%), 1fr)); gap: 12px; }
+.laka-scope .laka-featured-empty { display: none; }
+.laka-scope .laka-featured.no-selection .laka-featured-empty { display: block; }
+.laka-scope .laka-featured-card { padding: 12px 14px; border: 1px solid var(--l-border); border-radius: var(--l-radius); background: var(--l-surface); }
+.laka-scope .laka-featured-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.laka-scope .laka-featured-name { font-size: 13px; font-weight: 700; }
+.laka-scope .laka-featured-chart { position: relative; height: var(--chart-height, 200px); margin-top: 8px; }
+.laka-scope .laka-chart-stats { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; color: var(--l-text-2); font-size: 11px; }
+.laka-scope .laka-chart-stat-row { display: flex; flex-wrap: wrap; gap: 2px 16px; }
+.laka-scope .laka-chart-stat-row > span:first-child { min-width: 70px; font-weight: 700; }
+.laka-scope .laka-chart-stats b { color: var(--l-text); }
+.laka-scope .laka-chart-stats .in { color: var(--lc-in); }
+.laka-scope .laka-chart-stats .out { color: var(--lc-out); }
+.laka-scope .laka-sensor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; padding: 12px; }
+.laka-scope .laka-sensor {
+	display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; margin: 0; padding: 10px 12px;
+	border: 1px solid var(--l-border); border-left: 3px solid var(--l-ok); border-radius: var(--l-radius);
+	background: var(--l-surface); color: var(--l-text); text-align: left; cursor: pointer;
+}
+.laka-scope .laka-sensor:hover { background: var(--l-hover); }
+.laka-scope .laka-sensor.hw-warning { border-left-color: var(--l-warn); }
+.laka-scope .laka-sensor.hw-critical { border-left-color: var(--l-crit); }
+.laka-scope .laka-sensor.hw-unknown { border-left-color: var(--l-off); }
+.laka-scope .laka-sensor-name { overflow: hidden; color: var(--l-text-2); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.laka-scope .laka-sensor-value { font-size: 16px; font-weight: 700; }
+.laka-scope .laka-sensor.hw-warning .laka-sensor-value { color: var(--l-warn); }
+.laka-scope .laka-sensor.hw-critical .laka-sensor-value { color: var(--l-crit); }
+.laka-scope .laka-sensor .laka-meter { width: 100%; margin: 2px 0 0; }
+
+/* ------------------------------------------------------------------ gráfica */
+.laka-scope .laka-console, .laka-scope .laka-modal, .laka-scope.laka-modal { --lc-in: #1f9bd6; --lc-out: #e8862f; }
+.laka-scope .laka-chart-svg { display: block; width: 100%; height: 100%; overflow: visible; font-family: inherit; }
+.laka-scope .laka-chart-svg .grid { stroke: var(--l-border); stroke-width: 1; }
+.laka-scope .laka-chart-svg .axis { fill: var(--l-muted); font-size: 10px; }
+.laka-scope .laka-chart-svg .line { fill: none; stroke-width: 1.8; stroke-linejoin: round; }
+.laka-scope .laka-chart-svg .in { stroke: var(--lc-in); }
+.laka-scope .laka-chart-svg .out { stroke: var(--lc-out); }
+.laka-scope .laka-chart-svg .band.in { fill: var(--lc-in); opacity: .16; stroke: none; }
+.laka-scope .laka-chart-svg .band.out { fill: var(--lc-out); opacity: .14; stroke: none; }
+.laka-scope .laka-chart-svg .p95 { stroke-width: 1; stroke-dasharray: 3 4; opacity: .9; }
+.laka-scope .laka-chart-svg .cursor { stroke: var(--l-text-2); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; }
+.laka-scope .laka-chart-svg .cursor.on { opacity: .7; }
+.laka-scope .laka-chart-svg .legend { fill: var(--l-text-2); font-size: 11px; }
+.laka-scope .laka-chart-tip {
+	position: absolute; top: 4px; z-index: 3; display: none; padding: 6px 9px; border: 1px solid var(--l-border-strong); border-radius: 4px;
+	background: var(--l-surface); color: var(--l-text); font-size: 11px; line-height: 1.5; white-space: nowrap; box-shadow: var(--l-shadow); pointer-events: none;
+}
+.laka-scope .laka-chart-tip.on { display: block; }
+.laka-scope .laka-chart-msg { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--l-muted); font-size: 12px; }
+
+/* ------------------------------------------------------------------ tooltip */
+.laka-scope .laka-tooltip {
+	position: fixed; z-index: 1000001; max-width: 320px; padding: 9px 11px; pointer-events: none;
+	border: 1px solid var(--l-border-strong); border-radius: 6px; background: var(--l-surface); color: var(--l-text);
+	font-size: 12px; line-height: 1.45; box-shadow: var(--l-shadow);
+}
+.laka-scope .laka-tooltip-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.laka-scope .laka-tooltip-sub { margin-bottom: 6px; color: var(--l-muted); }
+.laka-scope .laka-tooltip dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; }
+.laka-scope .laka-tooltip dt { color: var(--l-muted); }
+.laka-scope .laka-tooltip dd { margin: 0; color: var(--l-text); font-weight: 600; }
+.laka-scope .laka-tooltip .laka-tooltip-problem { margin-top: 6px; padding-left: 8px; border-left: 3px solid var(--sev); color: var(--l-text); }
+
+/* ------------------------------------------------------------------ ventanas */
+.laka-scope .laka-modal, .laka-scope.laka-modal { position: fixed; z-index: 1000000; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(10, 16, 20, .55); font-size: 12px; line-height: 1.4; }
+.laka-scope .laka-modal-box { width: min(960px, 96vw); max-height: 92vh; overflow: auto; border: 1px solid var(--l-border-strong); border-radius: 8px; background: var(--l-surface); color: var(--l-text); box-shadow: var(--l-shadow); }
+.laka-scope .laka-modal-box.narrow { width: min(640px, 96vw); }
+.laka-scope .laka-modal-head { position: sticky; top: 0; z-index: 3; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--l-border); background: var(--l-panel); }
+.laka-scope .laka-modal-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
+.laka-scope .laka-modal-subtitle { margin-top: 2px; color: var(--l-muted); }
+.laka-scope .laka-modal-close { width: 30px; height: 30px; margin: 0; padding: 0; border: 0; background: transparent; color: var(--l-text-2); font-size: 22px; line-height: 1; cursor: pointer; }
+.laka-scope .laka-modal-close:hover { color: var(--l-text); }
+.laka-scope .laka-modal-body { padding: 14px 16px 16px; }
+.laka-scope .laka-modal-section { margin-top: 14px; }
+.laka-scope .laka-modal-section:first-child { margin-top: 0; }
+.laka-scope .laka-modal-section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 13px; font-weight: 700; }
+.laka-scope .laka-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.laka-scope .laka-fact { padding: 8px 10px; border: 1px solid var(--l-border); border-radius: 5px; background: var(--l-panel); min-width: 0; }
+.laka-scope .laka-fact-label { display: block; color: var(--l-muted); font-size: 11px; }
+.laka-scope .laka-fact-value { display: block; overflow-wrap: anywhere; font-size: 13px; font-weight: 700; }
+.laka-scope .laka-fact.full { grid-column: 1 / -1; }
+.laka-scope .laka-problem { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 6px; border: 1px solid var(--l-border); border-left: 4px solid var(--sev); border-radius: 4px; background: var(--l-panel); }
+.laka-scope .laka-problem small { margin-left: auto; color: var(--l-muted); }
+.laka-scope .laka-detail-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.laka-scope .laka-detail-table th { padding: 6px 10px; border-bottom: 1px solid var(--l-border-strong); color: var(--l-muted); font-size: 11px; text-align: left; }
+.laka-scope .laka-detail-table td { padding: 6px 10px; border-bottom: 1px solid var(--l-border); }
+.laka-scope .laka-detail-table td:nth-child(n+2) { white-space: nowrap; }
+.laka-scope .laka-chart-box { position: relative; height: 260px; }
+.laka-scope .laka-compare { display: grid; grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr); gap: 10px; align-items: stretch; }
+.laka-scope .laka-compare-side { border: 1px solid var(--l-border); border-radius: 6px; overflow: hidden; }
+.laka-scope .laka-compare-title { padding: 8px 10px; border-bottom: 1px solid var(--l-border); background: var(--l-panel); font-weight: 700; }
+.laka-scope .laka-compare-side .laka-facts { grid-template-columns: 1fr 1fr; padding: 10px; }
+.laka-scope .laka-compare-bridge { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--l-accent); font-size: 20px; }
+.laka-scope .laka-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.laka-scope .laka-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.laka-scope .laka-field { display: flex; flex-direction: column; gap: 5px; }
+.laka-scope .laka-field.full { grid-column: 1 / -1; }
+.laka-scope .laka-field label { color: var(--l-text-2); font-size: 12px; font-weight: 600; }
+.laka-scope .laka-field select, .laka-scope .laka-field input { width: 100%; height: 32px; padding: 0 9px; border: 1px solid var(--l-border-strong); border-radius: 4px; background: var(--l-surface); color: var(--l-text); font-size: 12px; }
+.laka-scope .laka-field select option { background: var(--l-surface); color: var(--l-text); }
+.laka-scope .laka-form-note { margin-top: 10px; color: var(--l-muted); }
+.laka-scope .laka-form-error { margin-top: 10px; padding: 8px 10px; border: 1px solid var(--l-crit); border-radius: 4px; color: var(--l-crit); }
+
+@media (max-width: 760px) {
+	.laka-scope .laka-console { grid-template-columns: 1fr; }
+	.laka-scope .laka-nav { max-height: 220px; border-right: 0; border-bottom: 1px solid var(--l-border); border-radius: var(--l-radius) var(--l-radius) 0 0; }
+	.laka-scope .laka-compare { grid-template-columns: 1fr; }
+	.laka-scope .laka-form-grid { grid-template-columns: 1fr; }
+	.laka-scope .laka-legend-hint { margin-left: 0; }
+	.laka-scope .laka-attention-row { grid-template-columns: 16px 1fr; }
+	.laka-scope .laka-attention-alias, .laka-scope .laka-attention-reason { grid-column: 2; }
+}
+
+/* ------------------------------------------------------------------ regiones (redes grandes) */
+.laka-scope .laka-region-group { border-bottom: 1px solid var(--l-border); }
+.laka-scope .laka-region-group.hidden { display: none; }
+.laka-scope .laka-region-head {
+	position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; width: 100%; margin: 0; padding: 8px 12px;
+	border: 0; border-radius: 0; background: var(--l-raised); color: var(--l-text); font-size: 12px; font-weight: 700; text-align: left; cursor: pointer;
+}
+.laka-scope .laka-region-head:hover { background: var(--l-hover); }
+.laka-scope .laka-region-head .laka-badge { margin-left: 0; }
+.laka-scope .laka-region-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.laka-scope .laka-region-chevron { width: 12px; color: var(--l-muted); transition: transform .12s ease; }
+.laka-scope .laka-region-group.collapsed:not(.searching) .laka-region-body { display: none; }
+.laka-scope .laka-region-group.collapsed:not(.searching) .laka-region-chevron { transform: rotate(-90deg); }
+.laka-scope .laka-console.nav-collapsed .laka-region-head { justify-content: center; padding: 6px 4px; }
+.laka-scope .laka-console.nav-collapsed .laka-region-name, .laka-scope .laka-console.nav-collapsed .laka-region-head .laka-count, .laka-scope .laka-console.nav-collapsed .laka-region-chevron { display: none; }
+
+.laka-scope .laka-breadcrumb { display: flex; align-items: center; gap: 6px; margin-top: 3px; font-size: 12px; color: var(--l-text-2); }
+.laka-scope .laka-breadcrumb:empty { display: none; }
+.laka-scope .laka-breadcrumb button { margin: 0; padding: 0; border: 0; background: none; color: var(--l-accent); font-size: 12px; cursor: pointer; }
+.laka-scope .laka-breadcrumb button:hover { text-decoration: underline; }
+.laka-scope .laka-breadcrumb b { color: var(--l-text); }
+.laka-scope .laka-global-topology .laka-topology-subtitle { margin-top: 1px; }
+
+.laka-scope .laka-region-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 14px; }
+.laka-scope .laka-global-topology.drilled .laka-region-cards { display: none; }
+.laka-scope .laka-region-card {
+	display: flex; flex-direction: column; gap: 3px; margin: 0; padding: 12px 14px; min-width: 0;
+	border: 1px solid var(--l-border); border-left: 4px solid var(--l-ok); border-radius: var(--l-radius);
+	background: var(--l-surface); color: var(--l-text); text-align: left; cursor: pointer;
+}
+.laka-scope .laka-region-card.has-issue { border-left-color: var(--sev); }
+.laka-scope .laka-region-card:hover { background: var(--l-hover); }
+.laka-scope .laka-region-card-title { font-size: 14px; font-weight: 700; }
+.laka-scope .laka-region-card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; margin-top: 6px; font-size: 11px; }
+.laka-scope .laka-region-card-stats div { display: flex; justify-content: space-between; gap: 6px; }
+.laka-scope .laka-region-card-stats b { color: var(--l-text); }
+.laka-scope .laka-region-card-stats b.bad { color: var(--l-crit); }
+.laka-scope .laka-region-card-stats b.warn { color: var(--l-warn); }
+
+.laka-scope .laka-pill-btn { border: 0; cursor: pointer; }
+.laka-scope .laka-pill-btn:hover { background: var(--l-hover); color: var(--l-accent); }
+.laka-scope .laka-spinner { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; border: 2px solid var(--l-border-strong);
+	border-top-color: var(--l-accent); border-radius: 50%; animation: laka-spin .8s linear infinite; }
+@keyframes laka-spin { to { transform: rotate(360deg); } }
+
+.laka-scope .lt-region .lt-node-box { stroke-width: 2px; }
+.laka-scope .lt-region-name { font-size: 14px; }
+.laka-scope .lt-region:hover .lt-node-box, .laka-scope .lt-stub:hover .lt-node-box { stroke: var(--l-accent); }
+.laka-scope .lt-bar-bg { fill: var(--l-raised); }
+.laka-scope .lt-bar.available { fill: var(--l-ok); } .laka-scope .lt-bar.warning { fill: var(--l-warn); } .laka-scope .lt-bar.unavailable { fill: var(--l-crit); }
+.laka-scope .lt-bar.maintenance { fill: var(--l-info); } .laka-scope .lt-bar.unknown { fill: var(--l-off); }
+.laka-scope .lt-stub .lt-node-box { fill: var(--l-panel); stroke: var(--l-border-strong); stroke-dasharray: 5 3; }
+.laka-scope .lt-badge-g.bad .lt-badge { stroke: var(--l-crit); }
+.laka-scope .lt-badge-g.bad .lt-badge-text { fill: var(--l-crit); }
+.laka-scope .lt-node.loading { opacity: .5; }
+
+/* ------------------------------------------------------------------ aviso de estado del script */
+.laka-scope .laka-console.laka-js-ready .laka-js-warning { display: none; }
+.laka-scope .laka-console.laka-js-error .laka-js-warning { display: block; }
+
+/* ------------------------------------------------------------------ lista de equipos (vista de flota) */
+.laka-scope .laka-fleet { display: none; padding: 14px 16px 16px; }
+.laka-scope .laka-fleet.active { display: block; }
+.laka-scope .laka-fleet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.laka-scope .laka-fleet-title { font-size: 16px; font-weight: 700; color: var(--l-text); }
+.laka-scope .laka-fleet-kpis { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.laka-scope .laka-fleet-kpis .laka-kpi { border-top: 3px solid var(--l-border); border-left-width: 1px; }
+.laka-scope .laka-fleet-kpis .laka-kpi.ok { border-top-color: var(--l-ok); border-left-color: var(--l-border); }
+.laka-scope .laka-fleet-kpis .laka-kpi.warn { border-top-color: var(--l-warn); border-left-color: var(--l-border); }
+.laka-scope .laka-fleet-kpis .laka-kpi.critical { border-top-color: var(--l-crit); border-left-color: var(--l-border); }
+.laka-scope .laka-kpi.selected { outline: 2px solid var(--l-accent); outline-offset: -1px; }
+.laka-scope .laka-fleet-card .laka-card-head { align-items: flex-start; }
+.laka-scope .laka-fleet-search { width: 220px; }
+.laka-scope .laka-fleet-filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px 0; }
+.laka-scope .laka-fleet-filters .laka-chip .laka-count { margin-left: 2px; }
+.laka-scope .laka-fleet-table { padding: 10px 14px 12px; }
+.laka-scope .laka-fleet-scroll { max-height: calc(36px + 22 * 46px); }
+.laka-scope .laka-fleet-list td { height: 44px; white-space: nowrap; }
+.laka-scope .laka-fleet-list td small { display: block; margin-top: 1px; color: var(--l-muted); font-size: 11px; font-weight: 400; }
+.laka-scope .laka-fleet-list td.fc-name b { color: var(--l-text); }
+.laka-scope .laka-fleet-list td.fc-model { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.laka-scope .laka-fleet-list td.fc-location { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.laka-scope .laka-fleet-list td.fc-software { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.laka-scope .laka-fleet-list td.fc-icmp { white-space: nowrap; }
+.laka-scope .laka-fleet-list td small.bad { color: var(--l-crit); }
+.laka-scope .laka-fleet-list td small.warn { color: var(--l-warn); }
+.laka-scope .laka-fleet-list .laka-num { font-weight: 700; }
+.laka-scope .laka-fleet-list .laka-num.ok, .laka-scope .laka-fleet-list .good { color: var(--l-ok); font-weight: 700; }
+.laka-scope .laka-fleet-list .laka-num.warn, .laka-scope .laka-fleet-list .warn { color: var(--l-warn); font-weight: 700; }
+.laka-scope .laka-fleet-list .laka-num.high, .laka-scope .laka-fleet-list .bad { color: var(--l-crit); font-weight: 700; }
+.laka-scope .laka-fleet-list .laka-badge { margin-left: 0; }
+.laka-scope .laka-fleet-row { cursor: pointer; }
+.laka-scope .laka-fleet-row:hover td { background: var(--l-hover); }
+.laka-scope .laka-fleet-group td { height: 36px; background: var(--l-raised); color: var(--l-text); cursor: pointer; }
+.laka-scope .laka-fleet-group td > * { vertical-align: middle; }
+.laka-scope .laka-fleet-group .laka-region-chevron { display: inline-block; margin-right: 6px; }
+.laka-scope .laka-fleet-group.collapsed .laka-region-chevron { transform: rotate(-90deg); }
+.laka-scope .laka-fleet-group .laka-count, .laka-scope .laka-fleet-group .laka-badge { margin-left: 8px; }
+.laka-scope .laka-link { margin-left: 14px; padding: 0; border: 0; background: none; color: var(--l-accent); font-size: 11px; cursor: pointer; }
+.laka-scope .laka-link:hover { text-decoration: underline; }
+.laka-scope .laka-fleet-foot { margin-top: 8px; font-size: 11px; text-align: right; }
+.laka-scope .laka-pill.health-warning[class*="sev-"] { background: color-mix(in srgb, var(--sev) 22%, transparent); color: var(--l-text); }
+
+/* ------------------------------------------------------------------ pie de autoría (color del tema, nunca rojo) */
+.laka-scope .laka-footer {
+	grid-column: 1 / -1; padding: 7px 14px; border-top: 1px solid var(--l-border);
+	color: var(--l-text); font-size: 11px; text-align: right; opacity: .75;
+}
+
+/* Localizador MAC / IP */
+.laka-scope .laka-nav-locate .laka-nav-topology-icon { font-size: 15px; }
+.laka-scope .laka-locate-box { width: min(860px, 96vw); }
+.laka-scope .laka-locate-form { display: flex; gap: 8px; }
+.laka-scope .laka-locate-input { flex: 1; min-width: 0; height: 32px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+.laka-scope .laka-locate-form .laka-btn { height: 32px; padding: 0 16px; }
+.laka-scope .laka-locate-result { margin-top: 14px; }
+.laka-scope .laka-locate-hint { padding: 6px 2px; }
+.laka-scope .laka-locate-msg { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--l-border); border-left-width: 3px; border-radius: 5px; background: var(--l-panel); }
+.laka-scope .laka-locate-msg.warn { border-left-color: var(--l-warn); }
+.laka-scope .laka-locate-msg.bad { border-left-color: var(--l-crit); }
+.laka-scope .laka-locate-msg.neutral { border-left-color: var(--l-info); }
+.laka-scope .laka-locate-msg ul { margin: 6px 0 0; padding-left: 18px; color: var(--l-text-2); }
+.laka-scope .laka-locate-msg p { margin: 6px 0 0; }
+.laka-scope .laka-locate-card { padding: 12px; border: 1px solid var(--l-border); border-radius: 6px; background: var(--l-surface); }
+.laka-scope .laka-locate-id { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.laka-scope .laka-locate-mac { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 18px; font-weight: 700; letter-spacing: .02em; }
+.laka-scope .laka-locate-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.laka-scope .laka-locate-conf-text { margin: 4px 0 10px; }
+.laka-scope .laka-conf { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 11px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.laka-scope .laka-conf.high { background: color-mix(in srgb, var(--l-ok) 16%, transparent); color: var(--l-ok); }
+.laka-scope .laka-conf.medium { background: color-mix(in srgb, var(--l-warn) 18%, transparent); color: var(--l-warn); }
+.laka-scope .laka-conf.low { background: color-mix(in srgb, var(--l-crit) 14%, transparent); color: var(--l-crit); }
+.laka-scope .laka-conf.multiple { background: color-mix(in srgb, var(--l-info) 16%, transparent); color: var(--l-info); }
+.laka-scope .laka-locate-path { margin: 0; padding: 0; list-style: none; counter-reset: hop; }
+.laka-scope .laka-locate-step { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; padding: 7px 10px 7px 34px; border-left: 2px solid var(--l-border-strong); margin-left: 10px; }
+.laka-scope .laka-locate-step::before { counter-increment: hop; content: counter(hop); position: absolute; left: -11px; top: 6px; width: 20px; height: 20px; border-radius: 50%; background: var(--l-raised, var(--l-panel)); border: 1px solid var(--l-border-strong); color: var(--l-text-2); font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.laka-scope .laka-locate-step.access { border-left-color: var(--l-ok); }
+.laka-scope .laka-locate-step.access::before { background: var(--l-ok); border-color: var(--l-ok); color: #fff; }
+.laka-scope .laka-locate-step.gap { border-left-style: dashed; }
+.laka-scope .laka-locate-step .laka-link { margin-left: 0; font-size: 12px; font-weight: 700; }
+.laka-scope .laka-locate-port { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; }
+.laka-scope .laka-locate-here { color: var(--l-ok); }
+.laka-scope .laka-locate-sightings summary { cursor: pointer; font-weight: 700; }
+.laka-scope .laka-locate-sightings .laka-table-scroll { margin-top: 8px; }
+.laka-scope .laka-locate-coverage { margin-top: 12px; font-size: 11px; }
+.laka-scope .laka-locate-coverage .warn { color: var(--l-warn); }
+.laka-scope .laka-topology svg.laka-path-focus .lt-edge.hl { stroke-width: 4px; }
+.laka-scope .laka-locate-host { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; padding: 10px 12px; border: 1px solid var(--l-border); border-radius: 6px; background: var(--l-panel); }
+.laka-scope .laka-locate-host-actions { display: flex; gap: 8px; }
+
+/* Render liviano: los equipos fuera de la vista del menú no se dibujan hasta que aparecen */
+.laka-scope .laka-device-list .laka-device { content-visibility: auto; contain-intrinsic-size: auto 56px; }
+
+/* Topología: tráfico animado, utilización, vecinos no monitoreados, minimapa */
+.laka-scope .lt-flow { fill: none; stroke: var(--l-flow, rgba(255, 255, 255, .85)); stroke-width: 2px; stroke-dasharray: 2 12; stroke-linecap: round; pointer-events: none; animation: lt-flow 2s linear infinite; opacity: .9; }
+.laka-theme-light .lt-flow { --l-flow: rgba(255, 255, 255, .95); }
+.laka-scope .lt-flow.warn { stroke-width: 2.4px; }
+.laka-scope .lt-flow.high { stroke-width: 2.8px; }
+@keyframes lt-flow { to { stroke-dashoffset: -28; } }
+.laka-scope .lt-no-anim .lt-flow { display: none; }
+@media (prefers-reduced-motion: reduce) { .laka-scope .lt-flow { animation: none; display: none; } }
+.laka-scope .focusing .lt-flow:not(.hl) { opacity: .08; }
+.laka-scope .lt-util { fill: var(--l-surface); stroke: var(--l-ok); stroke-width: 1.2px; }
+.laka-scope .lt-util-g.warn .lt-util { stroke: var(--l-warn); }
+.laka-scope .lt-util-g.high .lt-util { stroke: var(--l-crit); }
+.laka-scope .lt-util-text { font-size: 10px; font-weight: 700; fill: var(--l-text); }
+.laka-scope .focusing .lt-util-g:not(.hl) { opacity: .15; }
+.laka-scope .lt-ghost .lt-node-box { stroke-dasharray: 4 3; }
+.laka-scope .lt-minimap { position: absolute; right: 10px; bottom: 10px; width: 170px; height: 110px; border: 1px solid var(--l-border); border-radius: 6px; background: color-mix(in srgb, var(--l-surface) 90%, transparent); box-shadow: 0 2px 10px rgba(0, 0, 0, .18); cursor: pointer; }
+.laka-scope .lt-no-minimap .lt-minimap { display: none !important; }
+.laka-scope .lt-mm-edges line { stroke: var(--l-border-strong); stroke-width: 6px; }
+.laka-scope .lt-mm-node { fill: var(--l-text-3, #8a94a6); }
+.laka-scope .lt-mm-node.available { fill: var(--l-ok); }
+.laka-scope .lt-mm-node.warning { fill: var(--l-warn); }
+.laka-scope .lt-mm-node.unavailable { fill: var(--l-crit); }
+.laka-scope .lt-mm-node.endpoint { fill: var(--l-border-strong); }
+.laka-scope .lt-mm-view { fill: color-mix(in srgb, var(--l-info) 10%, transparent); stroke: var(--l-info); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.laka-scope .laka-topology-stage { position: relative; }
+.laka-scope .laka-route-form { display: flex; align-items: center; gap: 8px; }
+.laka-scope .laka-route-form .laka-input { flex: 1; min-width: 0; height: 32px; }
+.laka-scope .laka-route-form .laka-btn { height: 32px; }
+.laka-scope .laka-route-result { margin-top: 12px; }
+.laka-scope .laka-route-link { font-size: 11px; padding: 1px 7px; border-radius: 9px; background: color-mix(in srgb, var(--l-ok) 15%, transparent); color: var(--l-ok); }
+.laka-scope .laka-route-link.warn { background: color-mix(in srgb, var(--l-warn) 18%, transparent); color: var(--l-warn); }
+.laka-scope .laka-route-link.high, .laka-scope .laka-route-link.down { background: color-mix(in srgb, var(--l-crit) 15%, transparent); color: var(--l-crit); }
+
+/* Gráficas interactivas: semana anterior, eventos, zoom arrastrando */
+.laka-scope .laka-chart-svg .line.prev { stroke-width: 1.2; stroke-dasharray: 2 3; opacity: .65; }
+.laka-scope .laka-chart-svg .ev line { stroke: var(--sev); stroke-width: 1; stroke-dasharray: 2 2; opacity: .8; }
+.laka-scope .laka-chart-svg .ev path { fill: var(--sev); }
+.laka-scope .laka-chart-svg .zoom-sel { fill: color-mix(in srgb, var(--l-info) 18%, transparent); stroke: var(--l-info); stroke-width: 1; opacity: 0; pointer-events: none; }
+.laka-scope .laka-chart-svg .zoom-sel.on { opacity: 1; }
+.laka-scope .laka-chart-svg { cursor: crosshair; touch-action: none; }
+.laka-scope .laka-chart-unzoom { position: absolute; top: 28px; right: 16px; height: 24px; padding: 0 9px; font-size: 11px; }
+.laka-scope .laka-chart-hint { position: absolute; left: 68px; top: 28px; font-size: 10px; color: var(--l-muted); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.laka-scope .laka-chart-box:hover .laka-chart-hint, .laka-scope .laka-featured-chart:hover .laka-chart-hint { opacity: .9; }
+
+/* Mini-gráficas de la tabla de interfaces */
+.laka-scope .laka-table td.col-trend { width: 104px; padding-top: 3px; padding-bottom: 3px; }
+.laka-scope .laka-spark { display: block; width: 96px; height: 22px; }
+.laka-scope .laka-spark-svg { display: block; width: 96px; height: 22px; overflow: visible; }
+.laka-scope .laka-spark-svg path { fill: none; stroke-width: 1.3; vector-effect: non-scaling-stroke; }
+.laka-scope .laka-spark-svg path.in { stroke: var(--lc-in); }
+.laka-scope .laka-spark-svg path.out { stroke: var(--lc-out); }
+.laka-scope .laka-spark-svg path.area.in { fill: var(--lc-in); opacity: .18; stroke: none; }
+.laka-scope .laka-spark-svg .flat { stroke: var(--l-border-strong); stroke-width: 1; stroke-dasharray: 2 3; }
+.laka-scope .laka-th-label { font-size: 11px; font-weight: 700; color: var(--l-text-2); white-space: nowrap; }
+.laka-scope .laka-unused-btn.active { border-color: var(--l-info); color: var(--l-info); }
+
+/* Mapa de calor puertos x horas */
+.laka-scope .laka-heatmap-card { padding: 12px 14px; }
+.laka-scope .laka-heat-legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--l-text-2); }
+.laka-scope .laka-heat-key::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 5px; border-radius: 2px; vertical-align: -2px; background: var(--hc); }
+.laka-scope .laka-heat-grid { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; overflow-x: auto; }
+.laka-scope .laka-heat-row { display: grid; grid-template-columns: 120px repeat(24, minmax(14px, 1fr)) 48px; gap: 2px; align-items: center; cursor: pointer; border-radius: 3px; }
+.laka-scope .laka-heat-row:not(.head):hover { background: var(--l-hover, color-mix(in srgb, var(--l-info) 8%, transparent)); }
+.laka-scope .laka-heat-row.head { cursor: default; font-size: 10px; color: var(--l-muted); }
+.laka-scope .laka-heat-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 6px; }
+.laka-scope .laka-heat-peak { font-size: 11px; text-align: right; color: var(--l-text-2); font-variant-numeric: tabular-nums; }
+.laka-scope .laka-heat-hour { white-space: nowrap; overflow: visible; }
+.laka-scope .laka-heat-cell { height: 16px; border-radius: 2px; background: var(--hc); }
+.laka-scope .lv-na { --hc: repeating-linear-gradient(45deg, var(--l-border) 0 2px, transparent 2px 5px); }
+.laka-scope .lv-0 { --hc: color-mix(in srgb, var(--l-ok) 14%, var(--l-surface)); }
+.laka-scope .lv-1 { --hc: color-mix(in srgb, var(--l-ok) 40%, var(--l-surface)); }
+.laka-scope .lv-2 { --hc: color-mix(in srgb, var(--l-ok) 75%, var(--l-surface)); }
+.laka-scope .lv-3 { --hc: var(--l-warn); }
+.laka-scope .lv-4 { --hc: var(--l-crit); }
+.laka-scope .laka-heat-more { margin-top: 10px; }
+
+/* Inventario de conectados y auditoría */
+.laka-scope .laka-connected { white-space: nowrap; font-size: 12px; color: var(--l-text-2); }
+.laka-scope .laka-audit-section summary { cursor: pointer; padding: 4px 0; }
+.laka-scope .laka-audit-section summary .laka-count { margin-left: 4px; }
+.laka-scope .laka-audit-section .laka-table td { vertical-align: middle; }
+.laka-scope .laka-audit-section .laka-locate-port { margin-left: 6px; }
+
+/* Modo NOC: pantalla completa, letra más grande, barra con reloj y totales */
+.laka-scope .laka-noc { min-height: 100vh; font-size: 14px; grid-template-columns: minmax(0, 1fr) !important; }
+.laka-scope .laka-noc .laka-nav { display: none; }
+.laka-scope .laka-noc .laka-main { padding-top: 6px; }
+.laka-scope .laka-noc .laka-topology-stage { min-height: calc(100vh - 210px); }
+.laka-scope .laka-noc-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 10px 16px; border-bottom: 1px solid var(--l-border); background: var(--l-surface); position: sticky; top: 0; z-index: 5; }
+.laka-scope .laka-noc-title { font-size: 16px; font-weight: 700; margin-right: auto; }
+.laka-scope .laka-noc-kpi { font-size: 13px; color: var(--l-text-2); }
+.laka-scope .laka-noc-kpi b { font-size: 20px; color: var(--l-text); margin-left: 4px; }
+.laka-scope .laka-noc-kpi.bad b { color: var(--l-crit); }
+.laka-scope .laka-noc-kpi.warn b { color: var(--l-warn); }
+.laka-scope .laka-noc-clock { font-size: 15px; font-variant-numeric: tabular-nums; }
+.laka-scope .laka-nav-noc .laka-nav-topology-icon { font-size: 14px; }
+
+/* Ópticas SFP: puerto con potencia Rx baja o crítica. */
+.laka-scope .laka-port.optic-warn, .laka-scope .laka-port.optic-high { box-shadow: inset 0 -3px 0 var(--l-warn); }
+.laka-scope .laka-port.optic-high { box-shadow: inset 0 -3px 0 var(--l-crit); }
+.laka-scope .laka-table td.col-optic { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Localizador: errores de recolección desplegables. */
+.laka-scope .laka-locate-errors { margin-top: 6px; }
+.laka-scope .laka-locate-errors summary { cursor: pointer; color: var(--l-warn); }
+.laka-scope .laka-locate-errors ul { margin: 4px 0 0 18px; padding: 0; }
+.laka-scope .laka-locate-errors code { font-size: 11px; word-break: break-all; }
+
+/* Ventanas anchas (auditoría, ruta): tablas sin superposición, se ajustan al ancho de la pantalla. */
+.laka-scope .laka-modal-box.wide { width: min(1280px, 96vw); }
+.laka-scope .laka-modal-box.wide .laka-table td, .laka-scope .laka-modal-box.wide .laka-table th { white-space: nowrap; }
+.laka-scope .laka-modal-box.wide .laka-table td.laka-audit-detail { white-space: normal; min-width: 180px; }
+.laka-scope .laka-audit-section .laka-table td.laka-locate-port { margin: 0; }
+.laka-scope .laka-route-summary { margin: 12px 0 8px; line-height: 1.5; }
+.laka-scope .laka-route-table td { vertical-align: middle; }
+.laka-scope .laka-route-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--l-border-strong); font-weight: 700; }
+.laka-scope .laka-route-table tr.last .laka-route-num { background: var(--l-ok); border-color: var(--l-ok); color: #fff; }
+.laka-scope .laka-route-table .laka-route-link { margin-right: 6px; }
+.laka-scope .laka-modal-box.wide .laka-table .laka-link { margin-left: 0; font-size: 12px; font-weight: 600; }
+/* Las tablas de las ventanas tienen encabezados de texto (sin botones de orden): mismo margen que las celdas. */
+.laka-scope .laka-modal .laka-table th, .laka-scope.laka-modal .laka-table th { padding: 6px 10px; }
+@media (max-width: 1000px) {
+	.laka-scope .laka-modal-box.wide .laka-table td { white-space: normal; word-break: break-word; }
+}
