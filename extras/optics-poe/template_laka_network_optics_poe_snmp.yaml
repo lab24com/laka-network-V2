@@ -1,0 +1,424 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 36bff6c29af64692839d077febfc7079
+      name: 'Templates/Network devices'
+  templates:
+    - uuid: b339cdb1e2734c24be28ccb58761ca35
+      template: 'LAKA Network Optics and PoE by SNMP'
+      name: 'LAKA Network Optics and PoE by SNMP'
+      description: |
+        Potencia optica de los transceptores SFP/SFP+/QSFP (Rx y Tx en dBm, CISCO-ENTITY-SENSOR-MIB) y presupuesto PoE
+        (POWER-ETHERNET-MIB y CISCO-POWER-ETHERNET-EXT-MIB) para el widget LAKA Network.
+        
+        Solo lectura SNMP con la interfaz SNMP del host: sin scripts, sin SSH y sin cambios en los equipos.
+        Cada tabla se lee con un unico walk[] cada {$LAKA.OPTIC.INTERVAL} / {$LAKA.POE.INTERVAL} y el resto se calcula
+        con preprocesamiento, asi que la carga sobre el switch es minima.
+        Las metricas se asocian al ifIndex de cada puerto (ENTITY-MIB entAliasMappingTable o el nombre de la interfaz),
+        por eso el widget las muestra en la misma fila de la interfaz.
+        
+        Probado con Cisco Catalyst 2960, 3650/3850, 9200, 9300 y 9500. Los equipos sin estas MIB no crean elementos.
+        
+        © LAKA Soluciones Tecnologicas - Autor: Willian Tola - GPLv3
+      vendor:
+        name: 'LAKA Soluciones Tecnologicas'
+        version: 7.0-1
+      groups:
+        - name: 'Templates/Network devices'
+      items:
+        - uuid: 230ca03a9c354cd5a442446bf4d562a4
+          name: 'Optics: get sensors'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.4.1.9.9.91.1.1.1.1.1,1.3.6.1.4.1.9.9.91.1.1.1.1.3,1.3.6.1.4.1.9.9.91.1.1.1.1.4,1.3.6.1.2.1.47.1.1.1.1.7,1.3.6.1.2.1.47.1.1.1.1.4,1.3.6.1.2.1.47.1.3.2.1.2,1.3.6.1.2.1.2.2.1.2,1.3.6.1.2.1.31.1.1.1.1]'
+          key: laka.optic.walk
+          delay: '{$LAKA.OPTIC.INTERVAL}'
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          timeout: 30s
+          description: 'Sensores dBm de CISCO-ENTITY-SENSOR-MIB, nombres y contenedores de ENTITY-MIB, e ifDescr/ifName. El resultado es un JSON por ifIndex con Rx y Tx.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  // Lee la salida de walk[] de Zabbix: ".1.3.6.1...índice = TIPO: valor".
+                  var B = {
+                  	'1.3.6.1.4.1.9.9.91.1.1.1.1.1': 'type', '1.3.6.1.4.1.9.9.91.1.1.1.1.3': 'prec', '1.3.6.1.4.1.9.9.91.1.1.1.1.4': 'val',
+                  	'1.3.6.1.2.1.105.1.3.1.1.2': 'budget', '1.3.6.1.2.1.105.1.3.1.1.4': 'used', '1.3.6.1.2.1.105.1.1.1.6': 'detect',
+                  	'1.3.6.1.4.1.9.9.402.1.2.1.9': 'mw', '1.3.6.1.4.1.9.9.402.1.2.1.11': 'pent',
+                  	'1.3.6.1.2.1.47.1.1.1.1.7': 'ename', '1.3.6.1.2.1.47.1.1.1.1.4': 'parent', '1.3.6.1.2.1.47.1.3.2.1.2': 'alias',
+                  	'1.3.6.1.2.1.2.2.1.2': 'descr', '1.3.6.1.2.1.31.1.1.1.1': 'ifname'
+                  };
+                  var t = {}, lines = String(value).split('\n');
+                  for (var i = 0; i < lines.length; i++) {
+                  	var m = lines[i].match(/^\.?([0-9.]+)\s*=\s*(?:[A-Za-z0-9\-]+:\s?)?(.*)$/);
+                  	if (!m) continue;
+                  	var oid = m[1], v = m[2].replace(/^"(.*)"$/, '$1').trim(), base = oid;
+                  	while (base.indexOf('.') > 0) {
+                  		base = base.substring(0, base.lastIndexOf('.'));
+                  		if (B[base]) {
+                  			(t[B[base]] = t[B[base]] || {})[oid.substring(base.length + 1)] = v;
+                  			break;
+                  		}
+                  	}
+                  }
+                  function get(table) { return t[table] || {}; }
+                  // Nombre de interfaz (ifDescr e ifName, en minúsculas) -> ifIndex.
+                  var byName = {}, ifname = get('ifname'), descr = get('descr');
+                  for (var k in descr) byName[descr[k].toLowerCase()] = k;
+                  for (var k in ifname) byName[ifname[k].toLowerCase()] = k;
+                  // entPhysicalIndex -> ifIndex: entAliasMappingIdentifier del equipo o de sus contenedores, o el nombre.
+                  var alias = {};
+                  for (var k in get('alias')) {
+                  	var a = t.alias[k].match(/1\.3\.6\.1\.2\.1\.2\.2\.1\.1\.(\d+)$/);
+                  	if (a) alias[k.split('.')[0]] = a[1];
+                  }
+                  function ifIndexOf(ent, name) {
+                  	for (var n = 0, e = ent; e && e !== '0' && n < 6; n++) {
+                  		if (alias[e]) return alias[e];
+                  		e = get('parent')[e];
+                  	}
+                  	return name ? byName[name.toLowerCase()] : undefined;
+                  }
+                  function portName(index) { return ifname[index] || descr[index] || index; }
+                  // Potencia óptica Rx/Tx (dBm) por ifIndex, de CISCO-ENTITY-SENSOR-MIB (entSensorType 14 = dBm).
+                  var out = {}, type = get('type'), ename = get('ename');
+                  for (var s in type) {
+                  	if (type[s] !== '14' || get('val')[s] === undefined) continue;
+                  	var name = ename[s] || '', dir = /(receive|\brx\b)/i.test(name) ? 'rx' : (/(transmit|\btx\b)/i.test(name) ? 'tx' : '');
+                  	if (dir === '') continue;
+                  	var port = name.replace(/\s+(receive|transmit|rx|tx)\b.*$/i, '').trim();
+                  	var index = ifIndexOf(s, port);
+                  	if (index === undefined) continue;
+                  	var dbm = parseFloat(t.val[s]) / Math.pow(10, parseInt(get('prec')[s] || '0', 10));
+                  	if (isNaN(dbm)) continue;
+                  	var row = out[index] = out[index] || {name: portName(index)};
+                  	// Ópticas de varios carriles (40G/100G): se guarda el peor carril.
+                  	row[dir] = row[dir] === undefined ? dbm : Math.min(row[dir], dbm);
+                  }
+                  for (var k in out) {
+                  	if (out[k].rx !== undefined) out[k].rx = Math.round(out[k].rx * 100) / 100;
+                  	if (out[k].tx !== undefined) out[k].tx = Math.round(out[k].tx * 100) / 100;
+                  }
+                  return JSON.stringify(out);
+          tags:
+            - tag: component
+              value: optics
+        - uuid: 7aebc0c594ee4ee9b7d7d67085efd454
+          name: 'PoE: get data'
+          type: SNMP_AGENT
+          snmp_oid: 'walk[1.3.6.1.2.1.105.1.3.1.1.2,1.3.6.1.2.1.105.1.3.1.1.4,1.3.6.1.2.1.105.1.1.1.6,1.3.6.1.4.1.9.9.402.1.2.1.9,1.3.6.1.4.1.9.9.402.1.2.1.11,1.3.6.1.2.1.47.1.1.1.1.7,1.3.6.1.2.1.47.1.1.1.1.4,1.3.6.1.2.1.47.1.3.2.1.2,1.3.6.1.2.1.2.2.1.2,1.3.6.1.2.1.31.1.1.1.1]'
+          key: laka.poe.walk
+          delay: '{$LAKA.POE.INTERVAL}'
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          timeout: 30s
+          description: 'pethMainPseTable (presupuesto y consumo), estado de deteccion por puerto y consumo por puerto de Cisco (mW). El resultado es un JSON con el total y los puertos por ifIndex.'
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  // Lee la salida de walk[] de Zabbix: ".1.3.6.1...índice = TIPO: valor".
+                  var B = {
+                  	'1.3.6.1.4.1.9.9.91.1.1.1.1.1': 'type', '1.3.6.1.4.1.9.9.91.1.1.1.1.3': 'prec', '1.3.6.1.4.1.9.9.91.1.1.1.1.4': 'val',
+                  	'1.3.6.1.2.1.105.1.3.1.1.2': 'budget', '1.3.6.1.2.1.105.1.3.1.1.4': 'used', '1.3.6.1.2.1.105.1.1.1.6': 'detect',
+                  	'1.3.6.1.4.1.9.9.402.1.2.1.9': 'mw', '1.3.6.1.4.1.9.9.402.1.2.1.11': 'pent',
+                  	'1.3.6.1.2.1.47.1.1.1.1.7': 'ename', '1.3.6.1.2.1.47.1.1.1.1.4': 'parent', '1.3.6.1.2.1.47.1.3.2.1.2': 'alias',
+                  	'1.3.6.1.2.1.2.2.1.2': 'descr', '1.3.6.1.2.1.31.1.1.1.1': 'ifname'
+                  };
+                  var t = {}, lines = String(value).split('\n');
+                  for (var i = 0; i < lines.length; i++) {
+                  	var m = lines[i].match(/^\.?([0-9.]+)\s*=\s*(?:[A-Za-z0-9\-]+:\s?)?(.*)$/);
+                  	if (!m) continue;
+                  	var oid = m[1], v = m[2].replace(/^"(.*)"$/, '$1').trim(), base = oid;
+                  	while (base.indexOf('.') > 0) {
+                  		base = base.substring(0, base.lastIndexOf('.'));
+                  		if (B[base]) {
+                  			(t[B[base]] = t[B[base]] || {})[oid.substring(base.length + 1)] = v;
+                  			break;
+                  		}
+                  	}
+                  }
+                  function get(table) { return t[table] || {}; }
+                  // Nombre de interfaz (ifDescr e ifName, en minúsculas) -> ifIndex.
+                  var byName = {}, ifname = get('ifname'), descr = get('descr');
+                  for (var k in descr) byName[descr[k].toLowerCase()] = k;
+                  for (var k in ifname) byName[ifname[k].toLowerCase()] = k;
+                  // entPhysicalIndex -> ifIndex: entAliasMappingIdentifier del equipo o de sus contenedores, o el nombre.
+                  var alias = {};
+                  for (var k in get('alias')) {
+                  	var a = t.alias[k].match(/1\.3\.6\.1\.2\.1\.2\.2\.1\.1\.(\d+)$/);
+                  	if (a) alias[k.split('.')[0]] = a[1];
+                  }
+                  function ifIndexOf(ent, name) {
+                  	for (var n = 0, e = ent; e && e !== '0' && n < 6; n++) {
+                  		if (alias[e]) return alias[e];
+                  		e = get('parent')[e];
+                  	}
+                  	return name ? byName[name.toLowerCase()] : undefined;
+                  }
+                  function portName(index) { return ifname[index] || descr[index] || index; }
+                  // Presupuesto PoE (POWER-ETHERNET-MIB) y consumo por puerto (CISCO-POWER-ETHERNET-EXT-MIB, mW).
+                  var budget = 0, used = 0, groups = 0, ports = {}, mw = get('mw'), pent = get('pent'), detect = get('detect'), ename = get('ename');
+                  for (var g in get('budget')) {
+                  	var b = parseFloat(t.budget[g]);
+                  	if (isNaN(b) || b <= 0) continue;
+                  	budget += b;
+                  	used += parseFloat(get('used')[g]) || 0;
+                  	groups++;
+                  }
+                  for (var p in mw) {
+                  	var ent = pent[p], index = ent && ent !== '0' ? ifIndexOf(ent, ename[ent]) : undefined;
+                  	if (index === undefined) continue;
+                  	ports[index] = {name: portName(index), power: Math.round(parseFloat(mw[p]) / 10) / 100,
+                  		status: parseInt(detect[p] || '0', 10)};
+                  }
+                  return JSON.stringify({budget: groups ? budget : null, used: groups ? used : null, pse: groups, ports: ports});
+          tags:
+            - tag: component
+              value: poe
+        - uuid: d30df25ca41748b39ea7cdd9d14ae39d
+          name: 'PoE: power budget'
+          type: DEPENDENT
+          key: laka.poe.budget.total
+          delay: '0'
+          value_type: FLOAT
+          units: W
+          description: 'Suma de la potencia disponible de las fuentes PoE (pethMainPsePower; un valor por miembro del stack).'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.budget
+              error_handler: DISCARD_VALUE
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          master_item:
+            key: laka.poe.walk
+          tags:
+            - tag: component
+              value: poe
+        - uuid: f609eff0c78247529d436f52e81053d4
+          name: 'PoE: power used'
+          type: DEPENDENT
+          key: laka.poe.used.total
+          delay: '0'
+          value_type: FLOAT
+          units: W
+          description: 'Potencia PoE entregada en total (pethMainPseConsumptionPower).'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.used
+              error_handler: DISCARD_VALUE
+          master_item:
+            key: laka.poe.walk
+          tags:
+            - tag: component
+              value: poe
+          triggers:
+            - uuid: 1553d5707b4e4075a7b16558a5d635b1
+              expression: 'last(/LAKA Network Optics and PoE by SNMP/laka.poe.budget.total)>0 and last(/LAKA Network Optics and PoE by SNMP/laka.poe.used.total)/last(/LAKA Network Optics and PoE by SNMP/laka.poe.budget.total)*100>{$LAKA.POE.UTIL.WARN}'
+              name: 'PoE: power budget above {$LAKA.POE.UTIL.WARN}%'
+              event_name: 'PoE: power budget above {$LAKA.POE.UTIL.WARN}% ({ITEM.LASTVALUE1} of {ITEM.LASTVALUE2})'
+              priority: WARNING
+              description: 'El consumo PoE se acerca a la potencia disponible: un equipo nuevo (telefono, AP, camara) podria no encender.'
+              tags:
+                - tag: scope
+                  value: capacity
+      discovery_rules:
+        - uuid: 1e5ef7f52b0a41429cac4a95ccf66c64
+          name: 'Optics discovery'
+          type: DEPENDENT
+          key: laka.optic.discovery
+          delay: '0'
+          description: 'Un puerto por cada transceptor con sensores de potencia optica.'
+          item_prototypes:
+            - uuid: 747f505b5da541c6ba0ce5f9b75763c2
+              name: 'Interface {#IFNAME}: optical Rx power'
+              type: DEPENDENT
+              key: 'laka.optic.rx[{#SNMPINDEX}]'
+              delay: '0'
+              value_type: FLOAT
+              units: dBm
+              description: 'Potencia optica recibida. Un valor muy bajo indica fibra sucia o danada, conector flojo u optica degradada.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#SNMPINDEX}"].rx'
+                  error_handler: DISCARD_VALUE
+              master_item:
+                key: laka.optic.walk
+              tags:
+                - tag: component
+                  value: optics
+                - tag: interface
+                  value: '{#IFNAME}'
+              trigger_prototypes:
+                - uuid: f2550011846446e3a995a86a861f6c31
+                  expression: 'last(/LAKA Network Optics and PoE by SNMP/laka.optic.rx[{#SNMPINDEX}])<{$LAKA.OPTIC.RX.CRIT:"{#IFNAME}"} and last(/LAKA Network Optics and PoE by SNMP/laka.optic.rx[{#SNMPINDEX}])>{$LAKA.OPTIC.NOLIGHT}'
+                  name: 'Interface {#IFNAME}: optical Rx power critically low'
+                  event_name: 'Interface {#IFNAME}: optical Rx power critically low ({ITEM.LASTVALUE1})'
+                  priority: AVERAGE
+                  description: 'La potencia recibida esta por debajo de {$LAKA.OPTIC.RX.CRIT}: el enlace puede caer o tener errores CRC. Limpie conectores y revise la fibra.'
+                  tags:
+                    - tag: scope
+                      value: performance
+                - uuid: 6aba5963aed849a7b7f04395e3db3986
+                  expression: 'last(/LAKA Network Optics and PoE by SNMP/laka.optic.rx[{#SNMPINDEX}])<{$LAKA.OPTIC.RX.WARN:"{#IFNAME}"} and last(/LAKA Network Optics and PoE by SNMP/laka.optic.rx[{#SNMPINDEX}])>{$LAKA.OPTIC.NOLIGHT}'
+                  name: 'Interface {#IFNAME}: optical Rx power low'
+                  event_name: 'Interface {#IFNAME}: optical Rx power low ({ITEM.LASTVALUE1})'
+                  priority: WARNING
+                  description: 'La potencia recibida esta por debajo de {$LAKA.OPTIC.RX.WARN}. Ajuste los umbrales por interfaz con contexto, por ejemplo {$LAKA.OPTIC.RX.WARN:"Te1/1/1"}.'
+                  dependencies:
+                    - name: 'Interface {#IFNAME}: optical Rx power critically low'
+                      expression: 'last(/LAKA Network Optics and PoE by SNMP/laka.optic.rx[{#SNMPINDEX}])<{$LAKA.OPTIC.RX.CRIT:"{#IFNAME}"} and last(/LAKA Network Optics and PoE by SNMP/laka.optic.rx[{#SNMPINDEX}])>{$LAKA.OPTIC.NOLIGHT}'
+                  tags:
+                    - tag: scope
+                      value: performance
+            - uuid: 1fe434d4e55949c0ab036c7808bb0f0f
+              name: 'Interface {#IFNAME}: optical Tx power'
+              type: DEPENDENT
+              key: 'laka.optic.tx[{#SNMPINDEX}]'
+              delay: '0'
+              value_type: FLOAT
+              units: dBm
+              description: 'Potencia optica transmitida por el transceptor local.'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$["{#SNMPINDEX}"].tx'
+                  error_handler: DISCARD_VALUE
+              master_item:
+                key: laka.optic.walk
+              tags:
+                - tag: component
+                  value: optics
+                - tag: interface
+                  value: '{#IFNAME}'
+          master_item:
+            key: laka.optic.walk
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  // Una fila de descubrimiento por puerto con datos.
+                  var data = JSON.parse(value), rows = [], list = data.ports || data;
+                  for (var k in list) rows.push({'{#SNMPINDEX}': k, '{#IFNAME}': list[k].name});
+                  return JSON.stringify(rows);
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+        - uuid: 1d835b92560044c992c09ff8a1ec13cf
+          name: 'PoE port discovery'
+          type: DEPENDENT
+          key: laka.poe.discovery
+          delay: '0'
+          description: 'Puertos con datos de consumo PoE (CISCO-POWER-ETHERNET-EXT-MIB).'
+          item_prototypes:
+            - uuid: 78f7d85307b043bd9116ebfd04e62d65
+              name: 'Interface {#IFNAME}: PoE power'
+              type: DEPENDENT
+              key: 'laka.poe.power[{#SNMPINDEX}]'
+              delay: '0'
+              value_type: FLOAT
+              units: W
+              description: 'Potencia que consume el equipo conectado (cpeExtPsePortPwrConsumption).'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.ports["{#SNMPINDEX}"].power'
+                  error_handler: DISCARD_VALUE
+              master_item:
+                key: laka.poe.walk
+              tags:
+                - tag: component
+                  value: poe
+                - tag: interface
+                  value: '{#IFNAME}'
+            - uuid: 744e9d70163d4caa89efcee11e7bbfdc
+              name: 'Interface {#IFNAME}: PoE status'
+              type: DEPENDENT
+              key: 'laka.poe.status[{#SNMPINDEX}]'
+              delay: '0'
+              description: 'Estado de deteccion PoE (pethPsePortDetectionStatus).'
+              valuemap:
+                name: 'PoE detection status'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.ports["{#SNMPINDEX}"].status'
+                  error_handler: DISCARD_VALUE
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: laka.poe.walk
+              tags:
+                - tag: component
+                  value: poe
+                - tag: interface
+                  value: '{#IFNAME}'
+              trigger_prototypes:
+                - uuid: b0013b957e484d438f294bf9d180e657
+                  expression: 'last(/LAKA Network Optics and PoE by SNMP/laka.poe.status[{#SNMPINDEX}])=4 or last(/LAKA Network Optics and PoE by SNMP/laka.poe.status[{#SNMPINDEX}])=6'
+                  name: 'Interface {#IFNAME}: PoE fault'
+                  priority: WARNING
+                  description: 'El puerto detecto una falla al entregar PoE (cortocircuito, sobreconsumo o equipo no compatible).'
+                  tags:
+                    - tag: scope
+                      value: availability
+          master_item:
+            key: laka.poe.walk
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  // Una fila de descubrimiento por puerto con datos.
+                  var data = JSON.parse(value), rows = [], list = data.ports || data;
+                  for (var k in list) rows.push({'{#SNMPINDEX}': k, '{#IFNAME}': list[k].name});
+                  return JSON.stringify(rows);
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+      tags:
+        - tag: class
+          value: network
+        - tag: target
+          value: laka-network
+      macros:
+        - macro: '{$LAKA.OPTIC.INTERVAL}'
+          value: 5m
+          description: 'Intervalo de lectura de los sensores opticos.'
+        - macro: '{$LAKA.OPTIC.NOLIGHT}'
+          value: '-40'
+          description: 'Valor (dBm) desde el que se considera sin luz (puerto apagado o sin fibra); no genera alertas.'
+        - macro: '{$LAKA.OPTIC.RX.CRIT}'
+          value: '-18'
+          description: 'Rx critico (dBm). Acepta contexto por interfaz.'
+        - macro: '{$LAKA.OPTIC.RX.WARN}'
+          value: '-14'
+          description: 'Rx bajo (dBm). Acepta contexto por interfaz.'
+        - macro: '{$LAKA.POE.INTERVAL}'
+          value: 5m
+          description: 'Intervalo de lectura de PoE.'
+        - macro: '{$LAKA.POE.UTIL.WARN}'
+          value: '90'
+          description: 'Porcentaje del presupuesto PoE que genera alerta.'
+      valuemaps:
+        - uuid: f137b1d7ca2a40d0ba88aef845fee523
+          name: 'PoE detection status'
+          mappings:
+            - value: '1'
+              newvalue: disabled
+            - value: '2'
+              newvalue: searching
+            - value: '3'
+              newvalue: deliveringPower
+            - value: '4'
+              newvalue: fault
+            - value: '5'
+              newvalue: test
+            - value: '6'
+              newvalue: otherFault

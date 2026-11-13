@@ -1,0 +1,126 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 36bff6c29af64692839d077febfc7079
+      name: 'Templates/Network devices'
+  templates:
+    - uuid: b4201c45563b4f8a99672a94eb279dcc
+      template: 'LAKA Network MAC table by SNMP'
+      name: 'LAKA Network MAC table by SNMP'
+      description: |
+        Tabla de direcciones MAC (BRIDGE-MIB / Q-BRIDGE-MIB), tabla ARP (IP-MIB) y miembros de port-channel
+        (CISCO-PAGP-MIB / IEEE8023-LAG-MIB) para el localizador de equipos del widget LAKA Network.
+        
+        Usa la verificacion externa laka_fdb.sh (solo lectura SNMP, sin SSH ni cambios en los equipos).
+        En Cisco Catalyst la tabla MAC se consulta VLAN por VLAN con comunidad@VLAN (SNMPv2c) o contexto vlan-N (SNMPv3).
+        
+        Requisitos en el servidor o proxy de Zabbix que monitorea el equipo:
+        - net-snmp-utils / snmp (comando snmpbulkwalk)
+        - laka_fdb.sh en el directorio ExternalScripts, ejecutable por el usuario zabbix
+        
+        SNMPv2c: usa la macro {$SNMP_COMMUNITY} del host.
+        SNMPv3: complete {$LAKA.FDB.SNMPV3} con las opciones de snmpbulkwalk, por ejemplo
+        -v3 -l authPriv -u zabbix -a SHA -A clave -x AES -X clave
+        
+        © LAKA Soluciones Tecnologicas - GPLv3
+      vendor:
+        name: 'LAKA Soluciones Tecnologicas'
+        version: 7.0-1
+      groups:
+        - name: 'Templates/Network devices'
+      items:
+        - uuid: 3df359f7f2a141d8bf1c0317dded7eb3
+          name: 'MAC table: port-channel members'
+          type: EXTERNAL
+          key: 'laka_fdb.sh["lag","{HOST.CONN}","{$SNMP_COMMUNITY}","{$LAKA.FDB.SNMPV3}"]'
+          delay: 1h
+          history: '{$LAKA.FDB.HISTORY}'
+          value_type: TEXT
+          trends: '0'
+          timeout: 60s
+          description: 'Miembros de cada port-channel (agregado;nombre;ifIndex de los miembros). Lo usa el localizador para seguir un Po hasta el vecino CDP/LLDP de sus interfaces.'
+          tags:
+            - tag: component
+              value: mac-table
+      discovery_rules:
+        - uuid: d93c886001504baf915de781bea5de16
+          name: 'MAC table: VLAN discovery'
+          type: EXTERNAL
+          key: 'laka_fdb.sh["vlans","{HOST.CONN}","{$SNMP_COMMUNITY}","{$LAKA.FDB.SNMPV3}"]'
+          delay: 1h
+          timeout: 60s
+          filter:
+            conditions:
+              - macro: '{#LAKA.VLAN}'
+                value: '{$LAKA.FDB.VLAN.MATCHES}'
+                formulaid: A
+              - macro: '{#LAKA.VLAN}'
+                value: '{$LAKA.FDB.VLAN.NOT_MATCHES}'
+                operator: NOT_MATCHES_REGEX
+                formulaid: B
+          lifetime: 7d
+          description: 'VLAN activas (CISCO-VTP-MIB o Q-BRIDGE-MIB). Un item de tabla MAC por VLAN.'
+          item_prototypes:
+            - uuid: 0c7bd3ea44fb454eb491f63b8c6c6ef8
+              name: 'MAC table: VLAN {#LAKA.VLAN} {#LAKA.VLAN.NAME}'
+              type: EXTERNAL
+              key: 'laka_fdb.sh["fdb","{HOST.CONN}","{$SNMP_COMMUNITY}","{$LAKA.FDB.SNMPV3}","{#LAKA.VLAN}"]'
+              delay: '{$LAKA.FDB.INTERVAL}'
+              history: '{$LAKA.FDB.HISTORY}'
+              value_type: TEXT
+              trends: '0'
+              timeout: 60s
+              description: 'Direcciones MAC aprendidas en la VLAN, agrupadas por ifIndex (ifIndex:mac,mac,...). Formato LAKAFDB1.'
+              tags:
+                - tag: component
+                  value: mac-table
+                - tag: vlan
+                  value: '{#LAKA.VLAN}'
+        - uuid: afc42cdfad4749a09ce12a74afac90d2
+          name: 'MAC table: ARP interface discovery'
+          type: EXTERNAL
+          key: 'laka_fdb.sh["arpifs","{HOST.CONN}","{$SNMP_COMMUNITY}","{$LAKA.FDB.SNMPV3}"]'
+          delay: 1h
+          timeout: 60s
+          filter:
+            conditions:
+              - macro: '{#LAKA.ARP.IFNAME}'
+                value: '{$LAKA.ARP.IF.MATCHES}'
+                formulaid: A
+          lifetime: 7d
+          description: 'Interfaces L3 con entradas ARP (SVI, subinterfaces). Solo devuelve datos en equipos que hacen routing.'
+          item_prototypes:
+            - uuid: fc7f7277f03b4d33a2fe412b802fb9ed
+              name: 'ARP table: {#LAKA.ARP.IFNAME} {#LAKA.ARP.VLAN.NAME}'
+              type: EXTERNAL
+              key: 'laka_fdb.sh["arp","{HOST.CONN}","{$SNMP_COMMUNITY}","{$LAKA.FDB.SNMPV3}","{#LAKA.ARP.IFINDEX}"]'
+              delay: '{$LAKA.ARP.INTERVAL}'
+              history: '{$LAKA.FDB.HISTORY}'
+              value_type: TEXT
+              trends: '0'
+              timeout: 60s
+              description: 'Tabla ARP de la interfaz (IP -> MAC) agrupada por /24. Formato LAKAFDB1.'
+              tags:
+                - tag: component
+                  value: arp-table
+      macros:
+        - macro: '{$LAKA.ARP.IF.MATCHES}'
+          value: '.*'
+          description: 'Interfaces L3 cuyo ARP se recolecta (regex sobre el nombre, por ejemplo ^Vl).'
+        - macro: '{$LAKA.ARP.INTERVAL}'
+          value: 15m
+          description: 'Intervalo de recoleccion de la tabla ARP.'
+        - macro: '{$LAKA.FDB.HISTORY}'
+          value: 7d
+          description: 'Historial de tablas MAC/ARP (permite saber donde estuvo un equipo).'
+        - macro: '{$LAKA.FDB.INTERVAL}'
+          value: 15m
+          description: 'Intervalo de recoleccion de la tabla MAC de cada VLAN.'
+        - macro: '{$LAKA.FDB.SNMPV3}'
+          description: 'Vacio = SNMPv2c con {$SNMP_COMMUNITY}. SNMPv3: opciones de snmpbulkwalk (-v3 -l authPriv -u ... -a SHA -A ... -x AES -X ...).'
+        - macro: '{$LAKA.FDB.VLAN.MATCHES}'
+          value: '.*'
+          description: 'VLAN incluidas (regex sobre el ID).'
+        - macro: '{$LAKA.FDB.VLAN.NOT_MATCHES}'
+          value: '^(100[2-5])$'
+          description: 'VLAN excluidas (regex sobre el ID), por ejemplo ^(100[2-5]|999)$.'
